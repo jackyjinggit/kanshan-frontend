@@ -859,6 +859,8 @@ document.querySelectorAll("#steps .step").forEach(function (el) {
 /* ============ L1 数据接入层（官方开放平台 API · 本地网关） ============ */
 var GW = "http://localhost:8686"; /* 本地网关：密钥只留本机，不进前端 */
 var GW_OK = false, GW_SECRET = false, QUOTA = null;
+/* REMOTE_HOST 双轨：本地打开显示网关指引，公网托管（Pages/PushWebly）自动切在线提示 */
+var REMOTE_HOST = !/^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(location.hostname || "");
 
 function gwFetch(path, timeoutMs) {
   timeoutMs = timeoutMs || 10000;
@@ -1038,8 +1040,13 @@ function startOfficial() {
       var msg = "", hint = "";
       var c = e && e.code;
       if (c === "GW_DOWN" || (e instanceof Error && /gw down|Failed to fetch|NetworkError/i.test(e.message || ""))) {
-        msg = "本地网关未启动";
-        hint = "打开 frontend 文件夹，双击 <b>启动.bat</b>，等黑窗口显示「服务已启动」、浏览器打开 <b>http://localhost:8686/</b> 后再点本按钮。没装 Python？到 python.org 安装（勾选 Add to PATH）。也可用方式二或演示数据。";
+        if (REMOTE_HOST) {
+          msg = "在线版未连接数据网关";
+          hint = "数据读取功能（官方 API / 公开抓取）需在本机运行网关版才能使用；当前在线版可直接点下方「查看演示数据」体验完整流程。";
+        } else {
+          msg = "本地网关未启动";
+          hint = "打开 frontend 文件夹，双击 <b>启动.bat</b>，等黑窗口显示「服务已启动」、浏览器打开 <b>http://localhost:8686/</b> 后再点本按钮。没装 Python？到 python.org 安装（勾选 Add to PATH）。也可用方式二或演示数据。";
+        }
       } else if (c === "NO_SECRET") {
         msg = "本机未配置 Access Secret";
         hint = "两步：① 打开 <a href='https://developer.zhihu.com/profile' target='_blank' style='color:var(--pri)'>developer.zhihu.com/profile</a> 生成密钥；② 把密钥粘贴进 frontend 文件夹下的 <b>secret.txt</b>（启动.bat 会自动创建空文件，填入保存即可），然后重启 <b>启动.bat</b>。暂无密钥？用方式二或演示数据。";
@@ -1135,11 +1142,15 @@ function startFetch() {
       var payload = err && err.payload;
       var msg = safeErrorText(err, "网络不可达");
       var hint = code === "CLI_NOT_INSTALLED"
-        ? "官方 zhihu-cli 尚未安装：先安装并初始化 CLI，或直接切换到「演示数据」。"
+        ? (REMOTE_HOST
+          ? "在线版无法运行本机 CLI 抓取（zhihu-cli 只能在本机网关版使用）；当前在线版可直接点下方「查看演示数据」体验完整流程。"
+          : "官方 zhihu-cli 尚未安装：先安装并初始化 CLI，或直接切换到「演示数据」。")
         : code === "AUTH_REQUIRED" || code === "AUTH_INVALID"
           ? "CLI 需要 Access Secret。请先完成知乎开放平台授权；本页面不会回显或保存密钥。"
-          : "检查 启动.bat 与本地网关；若公开接口受限，页面已保留错误并可直接看演示数据。";
-      if (payload && payload.CLI && payload.CLI.status === "missing") hint = "官方 CLI 未安装，已阻止伪装成 CLI 成功。安装后重启启动.bat即可；也可先看演示数据。";
+          : (REMOTE_HOST
+            ? "在线版未连接数据网关：数据抓取功能需在本机运行网关版才能使用；当前在线版可直接点下方「查看演示数据」体验完整流程。"
+            : "检查 启动.bat 与本地网关；若公开接口受限，页面已保留错误并可直接看演示数据。");
+      if (!REMOTE_HOST && payload && payload.CLI && payload.CLI.status === "missing") hint = "官方 CLI 未安装，已阻止伪装成 CLI 成功。安装后重启启动.bat即可；也可先看演示数据。";
       if (ferr) {
         ferr.innerHTML = "抓取失败：<b>" + esc(msg) + "</b><br>" + esc(hint);
         ferr.classList.add("show");
@@ -1752,7 +1763,9 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
       .catch(function () {
         clearTimeout(timer);
         if (txt) {
-          txt.textContent = "引擎 ✓ " + VER + " · 本地网关未启动（双击 frontend 文件夹里的 启动.bat，即可连官方 API / 公开抓取；现在可用演示数据）";
+          txt.textContent = REMOTE_HOST
+            ? "引擎 ✓ " + VER + " · 在线演示版（数据读取需本机网关版；当前可直接体验演示数据）"
+            : "引擎 ✓ " + VER + " · 本地网关未启动（双击 frontend 文件夹里的 启动.bat，即可连官方 API / 公开抓取；现在可用演示数据）";
           txt.style.color = "var(--warn)";
         }
       });
