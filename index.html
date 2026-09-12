@@ -442,6 +442,7 @@
         <input class="uinput small" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/..." autocomplete="off">
         <div class="flow-row">
           <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
+          <input class="uinput small" id="ufans" placeholder="我的粉丝数（可选·自定义口径）" inputmode="numeric" title="填了就按你填的数算目标进度，口径标为「自定义」；不填则按抓取/演示值">
           <button class="authbtn" id="pubbtn" onclick="startFetch()">CLI 抓取 →</button>
         </div>
         <div class="entry-foot" id="cliHint">CLI 可用时走官方搜索；账号列表由公开接口精确补齐。CLI 未安装/未授权时会明确提示并自动走公开数据兜底。</div>
@@ -801,7 +802,7 @@ var KB = [
     platform: "知乎", stage: "全阶段",
     signalDesc: "粉丝进度 < 50% 且距 6 个月窗口过半（常驻兜底）",
     signal: function (A) {
-      if (!A.followersReal) return null; /* 粉丝口径不可得时不硬编（归因克制） */
+      if (A.followersKind !== "api" && A.followersKind !== "user") return null; /* 无粉丝口径时不硬编（归因克制） */
       var pct = A.followers / GOAL;
       if (pct >= 0.5) return null;
       return { score: 30, ctx: { pct: pct } };
@@ -835,6 +836,25 @@ var DEMO_PROFILE = { name: "山人书房（演示）", id: "demo", followers: 52
 /* ---------- 全局状态 ---------- */
 var curStep = 1, unlocked = 1, mode = "ok";
 var A = null, GOAL = 10000, kbFilter = "all";
+/* 用户自定义粉丝数：口径=「自定义（用户填写）」，非平台数据、非合成演示。
+   优先级：接口真值(api) > 用户自定义(user) > 合成演示(demo) > 缺(null，不硬编) */
+var MY_FANS = null;
+function parseFans(v) {
+  v = (v || "").replace(/[,，\s]/g, "");
+  if (!v) return null;
+  if (!/^\d+$/.test(v)) return NaN;
+  var n = parseInt(v, 10);
+  if (!(n > 0 && n <= 100000000)) return NaN;
+  return n;
+}
+function parseGoal(v) {
+  v = (v || "").replace(/[,，\s]/g, "");
+  if (!v) return 10000;
+  if (!/^\d+$/.test(v)) return NaN;
+  var n = parseInt(v, 10);
+  if (!(n > 0 && n <= 100000000)) return NaN;
+  return n;
+}
 var KB_REPO = "https://github.com/jackyjinggit/kanshan-kb";
 
 /* ============ 流程控制 ============ */
@@ -1106,7 +1126,18 @@ function startFetch() {
     }
     return;
   }
-  GOAL = parseInt(goalTxt, 10) || 10000;
+  var g = parseGoal(goalTxt);
+  if (isNaN(g)) {
+    if (ferr) { ferr.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。"; ferr.classList.add("show"); }
+    return;
+  }
+  GOAL = g;
+  var fv = parseFans(document.getElementById("ufans") ? document.getElementById("ufans").value : "");
+  if (isNaN(fv)) {
+    if (ferr) { ferr.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示不用自定义。"; ferr.classList.add("show"); }
+    return;
+  }
+  MY_FANS = fv;
 
   setLoadingButtons(false, true);
   resetLoadState();
@@ -1180,6 +1211,25 @@ function startFetch() {
 }
 
 function startDemo() {
+  /* 一键粘贴/演示入口同样支持自定义粉丝数：填了就用你填的口径（标记「自定义」），不填用合成演示值 */
+  var fEl = document.getElementById("ufans");
+  var fv = parseFans(fEl ? fEl.value : "");
+  if (isNaN(fv)) {
+    var fe = document.getElementById("ferr");
+    if (fe) { fe.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示用演示合成值。"; fe.classList.add("show"); }
+    return;
+  }
+  MY_FANS = fv;
+  var gEl = document.getElementById("ugoal");
+  if (gEl && gEl.value) {
+    var g2 = parseGoal(gEl.value);
+    if (isNaN(g2)) {
+      var fe2 = document.getElementById("ferr");
+      if (fe2) { fe2.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）。"; fe2.classList.add("show"); }
+      return;
+    }
+    GOAL = g2;
+  }
   resetLoadState();
   setLoadingButtons(false, false);
   A = buildAnalysis("demo", DEMO_PROFILE.id, DEMO_PROFILE, null, null, []);
@@ -1291,6 +1341,11 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
   }
 
   var followers = profile ? (profile.follower_count != null ? profile.follower_count : null) : null;
+  /* 粉丝口径：api（接口真值）/ user（用户自定义）/ demo（合成演示）/ null（缺，不硬编） */
+  var fKind = (followers != null) ? "api" : (MY_FANS != null ? "user" : (source === "demo" ? "demo" : null));
+  var fVal = (fKind === "api") ? followers
+           : (fKind === "user") ? MY_FANS
+           : (fKind === "demo") ? DEMO_PROFILE.followers : null;
   return {
     source: source, id: id,
     /* 内容接口是否双双受限（live 模式下 Answers/Articles 均为 null = 两个内容源都没抓到）。
@@ -1298,8 +1353,9 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
     contentBlocked: source === "live" ? (!answers && !articles) : false,
     name: profile ? (profile.name || id) : (source === "official" ? "我的知乎账号（官方 API）" : "演示账号"),
     headline: profile ? (profile.headline || "") : "",
-    followers: (followers != null) ? followers : (source === "demo" ? DEMO_PROFILE.followers : null),
-    followersReal: followers != null,
+    followers: fVal,
+    followersReal: fKind === "api",
+    followersKind: fKind,
     voteupTotal: profile ? (profile.voteup_count || 0) : DEMO_PROFILE.voteup_count,
     ansOK: ansOK, artOK: artOK,
     posts: posts, base: base, maxI: maxI,
@@ -1352,7 +1408,10 @@ function renderSrcBadges() {
     var t = ("0" + A.fetchedAt.getHours()).slice(-2) + ":" + ("0" + A.fetchedAt.getMinutes()).slice(-2);
      h += '<span class="tg ok">知乎公开账号数据 · ' + t + '</span>';
      h += '<span class="tg ok">账号：' + esc(A.name) + '</span>';
-    h += A.followersReal ? '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>' : '<span class="tg est">粉丝快照受限</span>';
+    if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
+    else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
+    else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
+    else h += '<span class="tg est">粉丝 缺失（不硬编）</span>';
     h += '<span class="tg ' + (A.ansOK ? "ok" : "est") + '">回答 ' + (A.ansOK ? A.posts.filter(function (p) { return p.type === "answer"; }).length + " 篇（真实）" : "接口受限") + '</span>';
     h += '<span class="tg ' + (A.artOK ? "ok" : "est") + '">文章 ' + (A.artOK ? A.posts.filter(function (p) { return p.type === "article"; }).length + " 篇（真实）" : "接口受限") + '</span>';
      h += '<span class="tg pri">命中方法 ' + MATCHED.length + ' 条</span>';
@@ -1410,7 +1469,7 @@ function renderMonthView() {
     el.appendChild(p);
   });
 
-  if (A.followersReal) {
+  if (A.followers != null) {
     var goalPct = Math.min(100, Math.round(A.followers / GOAL * 100));
     var align = Math.max(5, Math.min(99, Math.round(goalPct * 0.8 + A.stability * 0.2)));
     document.getElementById("m-align").innerHTML = align + '<small> · 目标进度 ' + goalPct + '%</small>';
@@ -1593,14 +1652,18 @@ function renderDayView() {
 
 /* ============ 屏3：方法论校准（①诊断②处方③依据） ============ */
 function renderScreen3() {
-  var pct = A.followersReal ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
+  var pct = (A.followers != null) ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
   document.getElementById("g-goal").textContent = "粉丝 " + fmtN(GOAL);
-  document.getElementById("g-who").innerHTML = '账号：<b>' + esc(A.name) + "</b>" + (A.headline ? " · " + esc(short(A.headline, 18)) : "") + (A.followersReal ? " · 粉丝数为接口真实值" : " · 官方用户数据接口不含粉丝数字段（不硬编）");
+  var fTxt = A.followersKind === "api" ? " · 粉丝数为接口真实值"
+           : A.followersKind === "user" ? " · 粉丝数为你填写的自定义值（非平台数据）"
+           : A.followersKind === "demo" ? " · 粉丝数为合成演示值（非真实）"
+           : " · 粉丝口径缺失（不硬编）";
+  document.getElementById("g-who").innerHTML = '账号：<b>' + esc(A.name) + "</b>" + (A.headline ? " · " + esc(short(A.headline, 18)) : "") + fTxt;
   document.getElementById("g-align").innerHTML = pct != null
     ? '月度卡判定（M1）：目标进度 <b style="color:var(--pri)">' + pct + '%</b>' + (A.snaps.length >= 2 && A.growthPerDay != null ? " · 真实增速 " + (A.growthPerDay >= 0 ? "+" : "") + A.growthPerDay.toFixed(1) + " 粉/日" : " · 逐日增速需快照积累（已存 " + A.snaps.length + " 次）")
-    : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；请用「方式二」公开抓取或看演示数据体验目标对齐分';
+    : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；可在首页填「我的粉丝数」（自定义口径）或用「方式二」公开抓取。';
 
-  document.getElementById("g-now").innerHTML = (A.followersReal ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
+  document.getElementById("g-now").innerHTML = (A.followers != null ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
   document.getElementById("g-tgt").innerHTML = '目标 <b>' + fmtN(GOAL) + '</b> · <span class="tg ' + (A.followersReal ? "ok" : "est") + '">' + (A.followersReal ? "真实" : "受限") + '</span>';
 
   var note;
