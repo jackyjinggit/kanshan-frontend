@@ -1232,6 +1232,9 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
     DEMO_POSTS.forEach(function (p) {
       posts.push({ type: p.type, title: p.title, voteup: p.voteup, comments: p.comments, created: new Date("2026-" + p.date + "T12:00:00+08:00").getTime() });
     });
+    /* WEB-02：demo 分支此前漏了降序排序，latest=posts[0] 取到最早一篇 → 误报「断更 42 天」。
+       与 official/live 两分支用同一句，保证样例顺序随机重排也不改变「最近作品」判定 */
+    posts.sort(function (x, y) { return y.created - x.created; });
   }
 
   var interacts = posts.map(function (p) { return (p.voteup || 0) + (p.comments || 0) + (p.fav || 0); });
@@ -1349,6 +1352,9 @@ function renderSrcBadges() {
   } else {
     h += '<span class="tg demo">演示数据（非真实）· 手动体验</span>';
   }
+  /* WEB-02：显式标「分析截至时间」＝最新一篇的发布日，让「断更 N 天」的基准可核对，
+     不让读者拿抓取时刻去猜分析窗口的右边界 */
+  if (A.latest) h += '<span class="tg est">分析截至 ' + fmtDateY(A.latest.created) + '（最新一篇发布日）</span>';
   el.innerHTML = h;
 }
 
