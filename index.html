@@ -245,6 +245,15 @@
 
   .h24card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px 18px; margin-bottom: 14px; }
   .h24 { position: relative; min-width: 760px; height: 150px; }
+  /* WEB-05：无小时级数据时的「三要素」替代视图（不画 24 小时走势） */
+  .snap3 { position: static; min-width: 0; height: auto; }
+  .snap3 .s3row { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+  .snap3 .s3row:last-of-type { border-bottom: 0; }
+  .snap3 .s3k { font-size: 12px; color: var(--text-3); }
+  .snap3 .s3v { font-size: 14px; color: var(--text-1); }
+  .snap3 .s3v b { font-size: 18px; font-weight: 800; }
+  .snap3 .s3v small { font-size: 12px; color: var(--text-3); }
+  .snap3 .s3note { margin-top: 12px; padding: 10px 12px; background: var(--bg-2, #f7f8fa); border-radius: 10px; font-size: 12px; line-height: 1.7; color: var(--text-3); }
   .h24 .track { position: absolute; left: 0; right: 0; top: 68px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--border) 0%, var(--pri-soft) 35%, var(--pri) 60%, var(--pri-soft) 100%); }
   .h24 .hour { position: absolute; top: 84px; font-size: 10px; color: var(--text-3); transform: translateX(-50%); }
   .hnode { position: absolute; top: 68px; transform: translate(-50%, -50%); text-align: center; z-index: 3; }
@@ -473,7 +482,7 @@
     <div class="srcbadges" id="srcbadges"></div>
 
     <div class="tiernav" id="tiernav">
-      <div class="tbtn on" data-tier="m" onclick="setTier('m')"><div class="n">月度卡</div><div class="s">30 天聚合 · 战略层</div></div>
+      <div class="tbtn on" data-tier="m" onclick="setTier('m')"><div class="n">月度卡</div><div class="s">全部抓取窗口 · 战略层</div></div>
       <span class="flow">▸</span>
       <div class="tbtn" data-tier="w" onclick="setTier('w')"><div class="n">周度卡</div><div class="s">7 天聚合 · 战术层</div></div>
       <span class="flow">▸</span>
@@ -508,7 +517,7 @@
     <div class="tview" id="tv-w">
       <div class="dayrow" id="dayrow"></div>
       <div class="wkmet">
-        <div class="mrow"><div class="mk">本周表现最好的一天</div><div class="mv" id="w-best">—</div></div>
+        <div class="mrow"><div class="mk">本周表现最好的一天<span class="tg est">本周发布作品的当前累计量</span></div><div class="mv" id="w-best">—</div></div>
         <div class="mrow"><div class="mk">历史最强发布日</div><div class="mv" id="w-strong">—</div></div>
         <div class="mrow"><div class="mk">本周内容类型</div><div class="mv" id="w-type">—</div></div>
         <div class="mrow"><div class="mk">撞题预警 Top3</div><div class="mv"><span class="tg est">需官方搜索接口</span> 待 OAuth 接入后开放</div></div>
@@ -1374,7 +1383,11 @@ function renderMonthView() {
   var pts = A.posts.slice().sort(function (a, b) { return a.created - b.created; });
   var start = pts[0].created, end = pts[pts.length - 1].created;
   var span = Math.max(1, end - start);
-  document.getElementById("tl-range").textContent = fmtDateY(start) + " ~ " + fmtDateY(end) + " · " + A.name + " · " + A.posts.length + " 篇公开内容";
+  /* WEB-05：此处聚合的是「全部抓取窗口」的作品，不是「近 30 天」。
+     标题与范围文案都按真实跨度写，跨度超 30 天时显式标注，避免窗口口径与聚合口径混用 */
+  var spanDays = Math.round((end - start) / 86400000);
+  document.getElementById("tl-range").textContent =
+    fmtDateY(start) + " ~ " + fmtDateY(end) + "（全部抓取窗口，跨 " + spanDays + " 天）· " + A.name + " · " + A.posts.length + " 篇公开内容";
 
   pts.forEach(function (it, idx) {
     var x = 3 + (it.created - start) / span * 94;
@@ -1460,7 +1473,9 @@ function renderWeekView() {
         cell.addEventListener("click", function () { setTier("d"); });
       }
       var inner = document.createElement("div");
-      inner.innerHTML = '<div class="dw">' + wname + (isToday ? " ·今天" : "") + '</div><div class="dd">' + dd + '</div><div class="dv ' + (up ? "up" : "down") + '">' + (up ? "+" : "") + total + '</div><div class="dc">' + posts.length + " 篇 · " + esc(short(posts[0].title, 10)) + '</div>';
+      /* WEB-05：这里是「该日发布作品到此刻的累计互动」，不是「当日新增」。
+         单次快照没有日级增量，去掉会被读成增量的 "+" 号，并在副行标累计口径 */
+      inner.innerHTML = '<div class="dw">' + wname + (isToday ? " ·今天" : "") + '</div><div class="dd">' + dd + '</div><div class="dv ' + (up ? "up" : "down") + '">' + total + '</div><div class="dc">' + posts.length + " 篇 · 累计 · " + esc(short(posts[0].title, 8)) + '</div>';
       cell.appendChild(inner);
     } else {
       cell.className = "dcell";
@@ -1510,29 +1525,25 @@ function renderDayView() {
   sum.textContent = "+" + fmtN(it.interact);
   sum.style.color = it.up ? "var(--up)" : "var(--down)";
 
+  /* WEB-05：单次快照没有小时级数据——此前把累计快照固定摆在 24 小时轴「23 点」，
+     等于凭空造出一条日内走势（42 天前的旧作也会落到首日 23 点）。
+     无小时级数据时不画 24 小时轴，改展示「发布时间 + 最新快照数值 + 快照采集时间」三要素。
+     等 OAuth 拿到真实小时级曝光/互动序列后，再在此处恢复走势图。 */
   var el = document.getElementById("h24");
   el.innerHTML = "";
-  var track = document.createElement("div"); track.className = "track"; el.appendChild(track);
-  [0, 3, 6, 9, 12, 15, 18, 21, 24].forEach(function (h) {
-    var t = document.createElement("div");
-    t.className = "hour"; t.style.left = (h / 24 * 100) + "%";
-    t.textContent = (h < 10 ? "0" + h : h) + ":00";
-    el.appendChild(t);
-  });
-  var nodes = [
-    { h: 0, cls: "pub", top: false, nm: "发布点", st: "ok 真实" },
-    { h: 10, cls: "node", top: true, nm: "10:00 早班车", st: "est 通用节点" },
-    { h: 14, cls: "node", top: true, nm: "14:00 二次分发", st: "est 通用节点" },
-    { h: 20, cls: "node", top: true, nm: "20:00 晚间高峰", st: "est 通用节点" },
-    { h: 23, cls: "snap", top: false, nm: "当前快照 " + fmtN(it.interact), st: "ok 真实" }
-  ];
-  nodes.forEach(function (n) {
-    var d = document.createElement("div");
-    d.className = "hnode " + n.cls;
-    d.style.left = (n.h / 24 * 100) + "%";
-    d.innerHTML = '<div class="nd"></div><div class="nt ' + (n.top ? "top" : "bot") + '"><div class="nm">' + n.nm + '</div><div class="st ' + n.st.split(" ")[0] + '">' + n.st + '</div></div>';
-    el.appendChild(d);
-  });
+  var snapAt = A.fetchedAt || new Date();
+  var snapTxt = fmtDateY(snapAt.getTime()) + " " + ("0" + snapAt.getHours()).slice(-2) + ":" + ("0" + snapAt.getMinutes()).slice(-2);
+  var ageTxt = ageH > 48 ? Math.round(ageH / 24) + " 天" : ageH + " 小时";
+  el.className = "snap3";
+  el.innerHTML =
+    '<div class="s3row"><div class="s3k">发布时间</div><div class="s3v">' + fmtDateY(it.created) +
+      ' <span class="tg ok">真实</span><small>　距今 ' + ageTxt + '</small></div></div>' +
+    '<div class="s3row"><div class="s3k">最新快照数值</div><div class="s3v">互动合计 <b>' + fmtN(it.interact) + '</b>' +
+      ' <span class="tg ok">真实</span><small>　赞 ' + fmtN(it.voteup) + ' · 评 ' + fmtN(it.comments) + (it.fav != null ? ' · 藏 ' + fmtN(it.fav) : '') + '</small></div></div>' +
+    '<div class="s3row"><div class="s3k">快照采集时间</div><div class="s3v">' + snapTxt +
+      ' <span class="tg ok">真实</span><small>　单次采集</small></div></div>' +
+    '<div class="s3note">小时级走势需要账号本人 OAuth 的曝光/流量序列，当前只有单次累计快照——' +
+      '<b>无小时级数据不画 24 小时走势</b>（缺失 ≠ 零）。</div>';
 
   /* M5 归因 */
   var attrs = "";
@@ -1545,7 +1556,7 @@ function renderDayView() {
     attrs = '<div class="attr-line"><span class="conf hi">低于基线（真实）</span><span>互动 ' + fmtN(it.interact) + '，仅为基线的 ' + ratio.toFixed(2) + ' 倍——低于你自己平均水准</span></div>' +
       '<div class="attr-line"><span class="conf lo">原因未知</span><span>曝光/点击率数据公开接口不可得——<b>不硬编原因</b>（归因克制是产品价值观）</span></div>';
   }
-  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需账号本人 OAuth 授权，当前为「发布点 + 快照」双点归因</span></div>';
+  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需账号本人 OAuth 授权；当前只有<b>单次累计快照</b>，不构成日内时间序列</span></div>';
   document.getElementById("d-attrs").innerHTML = attrs;
 
   var acts = "";
