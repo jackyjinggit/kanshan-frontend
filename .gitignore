@@ -1,0 +1,8 @@
+# 敏感凭证红线：永不入库
+*cookie*.json
+*cookie*.txt
+secret.txt
+*_browser_fb_out.json
+__pycache__/
+*.pyc
+.DS_Store

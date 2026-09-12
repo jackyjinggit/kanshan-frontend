@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>看山 · 创作校准引擎 · 数据接入层 + 方法论层 + 呈现层</title>
+<script>
+/* 【错误守卫·必须最先加载】任何错误立即红条显示在顶部，带完整堆栈 */
+(function(){
+  function show(msg){
+    var b = document.getElementById("__jserr");
+    if (!b) {
+      b = document.createElement("div");
+      b.id = "__jserr";
+      b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#f53f3f;color:#fff;padding:10px 16px;font:12px/1.7 Consolas,monospace;white-space:pre-wrap;max-height:40vh;overflow:auto;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);";
+      b.onclick = function(){ this.style.display="none"; };
+      (document.body || document.documentElement).appendChild(b);
+    }
+    b.style.display = "block";
+    b.textContent = msg;
+  }
+  window.addEventListener("error", function(e){
+    var msg = (e.message || "error") + "  at line " + e.lineno + ":" + e.colno;
+    if (e.error && e.error.stack) msg += "\n" + e.error.stack;
+    show("【JS 错误】" + msg + "\n（点此关闭。截图发开发者定位）");
+  });
+  window.addEventListener("unhandledrejection", function(e){
+    var r = e.reason;
+    var msg = r && (r.stack || r.message) ? (r.stack || r.message) : String(r);
+    show("【Promise 未捕获】" + msg + "\n（点此关闭。截图发开发者定位）");
+  });
+})();
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f6f7f9; --border: #e5e8ef; --border-hi: #c9d6e8;
+    --text: #1a2129; --text-2: #4e5969; --text-3: #86909c;
+    --pri: #0584ff; --pri-soft: #e8f3ff; --pri-deep: #0470e0;
+    --up: #f53f3f; --up-soft: #ffece8;
+    --down: #00b42a; --down-soft: #e8ffea;
+    --warn: #ff7d00; --warn-soft: #fff3e8;
+    --low: #86909c; --low-soft: #f2f3f5;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 1060px; margin: 0 auto; padding: 0 20px 90px; }
+
+  header { background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+  .nav { max-width: 1060px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .mtn { font-size: 15px; letter-spacing: -2px; color: var(--pri); line-height: 1; }
+  .brand .name { font-size: 16px; font-weight: 800; }
+  .brand .name small { font-weight: 400; color: var(--text-3); font-size: 11px; margin-left: 8px; }
+  .steps { display: flex; gap: 6px; font-size: 12px; color: var(--text-3); align-items: center; }
+  .step { display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+  .step .dot { width: 17px; height: 17px; border-radius: 50%; background: var(--border); color: var(--text-3); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .step.active { border-color: var(--pri); color: var(--pri); background: var(--pri-soft); }
+  .step.active .dot { background: var(--pri); color: #fff; }
+  .step.done .dot { background: var(--pri-soft); color: var(--pri); }
+  .step.disabled { opacity: .45; cursor: not-allowed; }
+
+  .banner { display: none; align-items: center; gap: 10px; margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-size: 13px; }
+  .banner.show { display: flex; }
+  .banner .icon { font-size: 17px; }
+  .banner .retry { margin-left: auto; border: 1px solid var(--warn); color: var(--warn); background: #fff; padding: 4px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .banner.warn { background: var(--warn-soft); border: 1px solid #ffd6ad; color: #a65300; }
+
+  .screen { display: none; padding-top: 40px; }
+  .screen.current { display: block; animation: fadein .3s; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+  .scr-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .scr-title { font-size: 21px; font-weight: 700; }
+  .scr-tag { font-size: 11px; color: var(--pri); background: var(--pri-soft); padding: 3px 10px; border-radius: 12px; }
+  .scr-sub { font-size: 12px; color: var(--text-3); }
+  .srcbadges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tg { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .tg.ok { background: var(--down-soft); color: var(--down); }
+  .tg.est { background: var(--warn-soft); color: var(--warn); }
+  .tg.demo { background: var(--low-soft); color: var(--low); }
+  .tg.pri { background: var(--pri-soft); color: var(--pri); }
+
+  .hero { text-align: center; margin-bottom: 26px; }
+  .hero .mtn { font-size: 30px; letter-spacing: -5px; color: var(--pri); }
+  .hero-kicker { color: var(--pri); font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-top: 9px; }
+  .hero h1 { font-size: 25px; font-weight: 800; margin: 6px 0 8px; }
+  .hero p { color: var(--text-2); font-size: 14px; line-height: 1.7; }
+  .hero p b { color: var(--pri); }
+
+  .flow-promise { display:flex; align-items:center; justify-content:center; gap:9px; flex-wrap:wrap; max-width:900px; margin:0 auto 16px; padding:11px 14px; background:#fff; border:1px solid var(--border); border-radius:12px; color:var(--text-3); font-size:11px; }
+  .flow-promise b { color:var(--text-2); font-size:12px; }
+  .flow-chip { background:var(--pri-soft); color:var(--pri); border-radius:12px; padding:3px 9px; font-weight:700; }
+  .entry-grid { display:grid; grid-template-columns:.9fr 1.1fr; gap:14px; max-width:900px; margin:0 auto; }
+  .entry-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .entry-card.cli-entry { border-color:rgba(5,132,255,.45); box-shadow:0 8px 24px rgba(5,132,255,.08); }
+  .entry-eyebrow { color:var(--pri); font-size:11px; font-weight:800; margin-bottom:7px; }
+  .entry-title { font-size:17px; font-weight:800; margin-bottom:8px; }
+  .entry-desc { min-height:62px; color:var(--text-2); font-size:12px; line-height:1.75; margin-bottom:15px; }
+  .entry-desc b { color:var(--pri); }
+  .entry-foot { margin-top:10px; color:var(--text-3); font-size:11px; line-height:1.6; }
+  .field-label { display:block; color:var(--text-2); font-size:11px; font-weight:700; margin-bottom:6px; }
+  .flow-row { display:grid; grid-template-columns:1fr 132px; gap:8px; align-items:start; }
+  .flow-row .uinput { min-width:0; }
+  .quick-actions { display:flex; align-items:center; justify-content:center; gap:10px; margin:17px auto 0; color:var(--text-3); font-size:11px; }
+  .secondarybtn { border:1px solid var(--border-hi); background:#fff; color:var(--text-2); border-radius:9px; padding:9px 16px; cursor:pointer; font-size:12px; font-weight:600; }
+  .secondarybtn:hover { border-color:var(--pri); color:var(--pri); }
+  .flow-note { max-width:900px; margin:16px auto 0; padding:10px 13px; color:var(--text-3); background:rgba(255,255,255,.65); border:1px dashed var(--border); border-radius:9px; text-align:center; font-size:11px; line-height:1.6; }
+  .flow-note b { color:var(--pri); }
+
+  .quote { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--pri); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+  .quote .q { font-size: 14px; line-height: 1.8; }
+  .quote .who { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+  .quote .ans { font-size: 12px; color: var(--pri); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+
+  .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .layer { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .layer .lt { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .layer .lno { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .layer.d1 .lno { background: var(--down-soft); color: var(--down); }
+  .layer.d2 .lno { background: var(--warn-soft); color: var(--warn); }
+  .layer.d3 .lno { background: var(--pri-soft); color: var(--pri); }
+  .layer .lt b { font-size: 13.5px; }
+  .layer ul { list-style: none; }
+  .layer li { font-size: 11px; color: var(--text-2); padding: 2px 0; }
+  .layer li::before { content: "·"; margin-right: 6px; color: var(--text-3); }
+
+  .tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .tier { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .tier .tt { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .tier .lv { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .tier.m .lv { background: var(--pri-soft); color: var(--pri); }
+  .tier.w .lv { background: var(--up-soft); color: var(--up); }
+  .tier.d .lv { background: var(--down-soft); color: var(--down); }
+  .tier .tt b { font-size: 14px; }
+  .tier .q { font-size: 12px; color: var(--pri); margin-bottom: 8px; font-weight: 600; }
+  .tier ul { list-style: none; }
+  .tier li { font-size: 11px; color: var(--text-2); padding: 2px 0; }
+  .tier li::before { content: "·"; margin-right: 6px; color: var(--text-3); }
+
+  .authcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 30px; max-width: 620px; margin: 0 auto; text-align: center; }
+  .authcard .desc { font-size: 15px; line-height: 1.8; color: var(--text-2); margin-bottom: 18px; }
+  .authcard .desc b { color: var(--text); }
+  .authbtn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; background: var(--pri); color: #fff; font-size: 16px; font-weight: 700; }
+  .authbtn:hover { background: var(--pri-deep); }
+  .authbtn:disabled { opacity: .6; cursor: not-allowed; }
+  .uinput { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border-hi); border-radius: 10px; font-size: 15px; margin-bottom: 10px; outline: none; }
+  .uinput:focus { border-color: var(--pri); }
+  .uinput.small { padding: 9px 14px; font-size: 13px; }
+  .authsub { margin-top: 14px; font-size: 12px; color: var(--text-3); }
+  .authsub a { color: var(--pri); cursor: pointer; text-decoration: underline; }
+  .ferr { display: none; margin-top: 12px; font-size: 12px; color: var(--up); background: var(--up-soft); border-radius: 8px; padding: 10px 12px; text-align: left; line-height: 1.6; }
+  .ferr.show { display: block; }
+  .oauthbox { margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border); text-align: left; }
+  .oauthbox .ot { font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+  .oauthbox .od { font-size: 12px; color: var(--text-3); line-height: 1.7; }
+  .oauthbox .lock { display: inline-block; font-size: 10px; background: var(--low-soft); color: var(--low); padding: 2px 8px; border-radius: 6px; font-weight: 700; margin-top: 6px; }
+
+  .loading { text-align: center; padding: 80px 0; }
+  .spin { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--pri); border-radius: 50%; margin: 0 auto 16px; animation: rot .8s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text-2); font-size: 14px; }
+  .loadlog { margin-top: 16px; font-size: 12px; color: var(--text-3); line-height: 2; }
+  .loadlog .li { opacity: .45; }
+  .loadlog .li.doing { opacity: 1; color: var(--pri); }
+  .loadlog .li.done { opacity: 1; color: var(--text-2); }
+  .loadlog .li.done::after { content: " ✓"; color: var(--down); font-weight: 700; }
+  .loadlog .li.fail { opacity: 1; color: var(--warn); }
+  .loadlog .li.fail::after { content: " ✗（跳过）"; color: var(--warn); }
+  .load-error { display:none; max-width:680px; margin:22px auto 0; padding:14px 16px; border:1px solid #ffd6ad; border-radius:10px; background:var(--warn-soft); color:#8b4b0d; text-align:left; font-size:12px; line-height:1.7; white-space:pre-wrap; }
+  .load-error.show { display:block; }
+  .load-actions { display:none; justify-content:center; gap:8px; margin-top:14px; }
+  .load-actions.show { display:flex; }
+  .load-actions button { border:1px solid var(--border-hi); background:#fff; color:var(--text-2); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:12px; }
+  .load-actions button.primary { border-color:var(--pri); background:var(--pri); color:#fff; }
+
+  .tiernav { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 6px; margin-bottom: 16px; }
+  .tbtn { flex: 1; text-align: center; padding: 9px 6px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all .15s; }
+  .tbtn .n { font-size: 13px; font-weight: 700; }
+  .tbtn .s { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+  .tbtn.on { background: var(--pri-soft); border-color: rgba(5,132,255,.35); }
+  .tbtn.on .n, .tbtn.on .s { color: var(--pri); }
+  .tiernav .flow { color: var(--text-3); font-size: 14px; padding: 0 2px; }
+  .tview { display: none; }
+  .tview.on { display: block; animation: fadein .25s; }
+
+  .metrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .mcell { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; }
+  .mcell .k { font-size: 11px; color: var(--text-3); margin-bottom: 5px; }
+  .mcell .v { font-size: 19px; font-weight: 700; }
+  .mcell .v small { font-size: 11px; font-weight: 400; color: var(--text-3); }
+  .mcell .v.up { color: var(--up); }
+  .mcell .v.down { color: var(--down); }
+  .mcell .v.pri { color: var(--pri); }
+
+  .tlcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 22px 20px 16px; }
+  .lgd { display: flex; gap: 14px; font-size: 11px; color: var(--text-2); flex-wrap: wrap; margin-bottom: 6px; }
+  .lgd i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .lgd .u { background: var(--up); }
+  .lgd .d { background: var(--down); }
+
+  .tl-scroll { overflow-x: auto; }
+  .tl { position: relative; min-width: 900px; height: 190px; }
+  .tl .axis { position: absolute; left: 0; right: 0; top: 78px; height: 2px; background: var(--border-hi); }
+  .pt { position: absolute; top: 78px; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; text-align: center; }
+  .pt .pd { width: 15px; height: 15px; border-radius: 50%; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--border-hi); transition: transform .15s; }
+  .pt.up .pd { background: var(--up); }
+  .pt.down .pd { background: var(--down); }
+  .pt:hover .pd { transform: scale(1.4); }
+  .pt .pv { position: absolute; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .pt.up .pv { bottom: 24px; color: var(--up); }
+  .pt.down .pv { top: 24px; color: var(--down); }
+  .pt .ptd { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-3); white-space: nowrap; }
+  .pt.up .ptd { top: 24px; }
+  .pt.down .ptd { bottom: 24px; }
+  .pt .ptyp { position: absolute; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--pri); white-space: nowrap; }
+
+  .mlist { margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; }
+  .mrow { display: flex; gap: 10px; padding: 5px 0; font-size: 12px; }
+  .mrow .mk { min-width: 118px; color: var(--text-3); flex-shrink: 0; }
+  .mrow .mv { color: var(--text-2); flex: 1; }
+  .mrow .mv b { color: var(--text); }
+  .mrow .mv .best { color: var(--up); font-weight: 700; }
+  .mrow .mv .worst { color: var(--down); font-weight: 700; }
+
+  .dayrow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; }
+  .dcell { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px; text-align: center; position: relative; min-height: 108px; }
+  .dcell .dw { font-size: 11px; color: var(--text-3); }
+  .dcell .dd { font-size: 12px; font-weight: 700; margin: 3px 0 8px; }
+  .dcell .dv { font-size: 15px; font-weight: 700; }
+  .dcell .dv.up { color: var(--up); }
+  .dcell .dv.down { color: var(--down); }
+  .dcell .dv.flat { color: var(--text-3); font-size: 13px; }
+  .dcell .dc { font-size: 10px; color: var(--text-3); margin-top: 5px; line-height: 1.5; overflow: hidden; }
+  .dcell.plan { border-style: dashed; background: #fbfcfd; }
+  .dcell.plan .dv { color: var(--pri); font-size: 12px; font-weight: 600; }
+  .dcell.click { cursor: pointer; border-color: rgba(5,132,255,.5); background: var(--pri-soft); }
+  .dcell .drilltag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 9px; background: var(--pri); color: #fff; padding: 2px 8px; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+
+  .wkmet { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .wkmet .mrow .mk { min-width: 128px; }
+
+  .dayhead { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .dayhead .t { font-size: 15px; font-weight: 700; }
+  .dayhead .z { font-size: 12px; color: var(--text-3); }
+  .dayhead .sum { font-size: 20px; font-weight: 800; }
+
+  .h24card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px 18px; margin-bottom: 14px; }
+  .h24 { position: relative; min-width: 760px; height: 150px; }
+  .h24 .track { position: absolute; left: 0; right: 0; top: 68px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--border) 0%, var(--pri-soft) 35%, var(--pri) 60%, var(--pri-soft) 100%); }
+  .h24 .hour { position: absolute; top: 84px; font-size: 10px; color: var(--text-3); transform: translateX(-50%); }
+  .hnode { position: absolute; top: 68px; transform: translate(-50%, -50%); text-align: center; z-index: 3; }
+  .hnode .nd { width: 13px; height: 13px; border-radius: 50%; margin: 0 auto; border: 3px solid #fff; }
+  .hnode.pub .nd { background: var(--pri); box-shadow: 0 0 0 1px var(--pri); }
+  .hnode.snap .nd { background: var(--down); box-shadow: 0 0 0 1px var(--down); }
+  .hnode.node .nd { background: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
+  .hnode .nt { position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .hnode .nt.top { bottom: 24px; }
+  .hnode .nt.bot { top: 24px; }
+  .hnode .nt .nm { font-size: 11px; font-weight: 700; color: var(--text); }
+  .hnode .nt .st { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 8px; margin-top: 2px; font-weight: 600; }
+  .hnode .nt .st.est { background: var(--warn-soft); color: var(--warn); }
+  .hnode .nt .st.ok { background: var(--down-soft); color: var(--down); }
+
+  .dagrid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  .dacard { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .dacard .dt { font-size: 12px; font-weight: 700; color: var(--pri); margin-bottom: 10px; }
+  .attr-line { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13px; flex-wrap: wrap; }
+  .attr-line:last-child { border-bottom: none; }
+  .conf { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+  .conf.hi { background: var(--down-soft); color: var(--down); }
+  .conf.mid { background: var(--warn-soft); color: var(--warn); }
+  .conf.lo { background: var(--low-soft); color: var(--low); }
+  .actbtns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .abtn { padding: 10px 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); text-align: center; cursor: pointer; font-size: 12px; color: var(--text-2); }
+  .abtn b { display: block; font-size: 13px; color: var(--text); margin-bottom: 3px; }
+  .abtn.rec { border-color: var(--pri); background: var(--pri-soft); }
+  .abtn.rec b { color: var(--pri); }
+  .abtn .why { font-size: 10px; color: var(--text-3); margin-top: 3px; line-height: 1.4; }
+
+  .nextbtn { display: block; margin: 24px auto 0; padding: 12px 44px; border: none; border-radius: 10px; background: var(--pri); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .nextbtn:hover { background: var(--pri-deep); }
+
+  .mask { display: none; position: fixed; inset: 0; background: rgba(29,33,41,.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 490px; padding: 26px; animation: pop .18s; box-shadow: 0 16px 48px rgba(29,33,41,.25); max-height: 88vh; overflow-y: auto; }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .xclose { float: right; border: none; background: var(--bg); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; color: var(--text-2); }
+  .mdate { font-size: 11px; color: var(--text-3); margin-top: 10px; }
+  .mtitle { font-size: 16px; font-weight: 700; margin: 6px 0 4px; line-height: 1.5; padding-right: 28px; }
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mcell2 { background: var(--bg); border-radius: 9px; padding: 11px 13px; }
+  .mcell2 .k { font-size: 10px; color: var(--text-3); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .mcell2 .v { font-size: 15px; font-weight: 700; }
+  .mcell2 .v.up { color: var(--up); }
+  .mcell2 .v.down { color: var(--down); }
+  .mcell2.full { grid-column: 1 / -1; }
+  .mcell2 .v.txt { font-weight: 500; font-size: 12.5px; line-height: 1.7; color: var(--text-2); }
+  .mcell2 .v.adv { font-weight: 500; font-size: 12.5px; line-height: 1.7; color: var(--pri); }
+  .mnote { margin-top: 12px; font-size: 11px; color: var(--text-3); background: var(--bg); border-radius: 8px; padding: 9px 12px; line-height: 1.6; }
+
+  /* ===== 屏3：方法论驱动 ===== */
+  .goal2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .gcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .gt { font-size: 12px; font-weight: 700; color: var(--pri); margin-bottom: 12px; }
+  .gmain { font-size: 18px; font-weight: 800; line-height: 1.4; }
+  .gsub { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+  .pnum { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+  .pnow { font-size: 27px; font-weight: 800; }
+  .pnow b { color: var(--pri); font-size: 16px; }
+  .ptgt { font-size: 12px; color: var(--text-3); }
+  .pbar { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; margin-bottom: 10px; }
+  .pfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--pri), #67b0ff); border-radius: 5px; transition: width 1s ease; }
+  .pnote { font-size: 12px; color: var(--text-2); line-height: 1.8; }
+  .pnote b { color: var(--warn); }
+
+  .kbtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .kbt { font-size: 11px; padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-2); }
+  .kbt.on { background: var(--pri); border-color: var(--pri); color: #fff; font-weight: 700; }
+
+  .mcard { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; position: relative; }
+  .mcard .rank { position: absolute; top: -11px; left: 20px; background: var(--up); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 12px; border-radius: 10px; }
+  .mcard.h1 .rank { background: var(--up); }
+  .mcard.h2 .rank { background: var(--warn); }
+  .mcard.h3 .rank { background: var(--pri); }
+  .mhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mmod { font-size: 11px; font-weight: 800; color: #fff; background: var(--pri); padding: 3px 10px; border-radius: 8px; }
+  .mname { font-size: 14.5px; font-weight: 700; }
+  .mtime { font-size: 10px; color: var(--text-3); margin-left: auto; }
+  .mcard .row3 { border-top: 1px dashed var(--border); padding: 12px 0 2px; display: flex; gap: 10px; }
+  .mcard .row3 .no { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .mcard .r1 .no { background: var(--up); }
+  .mcard .r2 .no { background: var(--warn); }
+  .mcard .r3 .no { background: var(--pri); }
+  .mcard .row3 .body { flex: 1; }
+  .mcard .row3 .h { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .mcard .r1 .h { color: var(--up); }
+  .mcard .r2 .h { color: var(--warn); }
+  .mcard .r3 .h { color: var(--pri); }
+  .mcard .row3 .t { font-size: 13px; line-height: 1.7; color: var(--text); }
+  .mcard .row3 .t b { color: var(--pri); }
+  .sigbox { margin-top: 6px; background: var(--bg); border-radius: 8px; padding: 9px 12px; font-size: 11px; color: var(--text-3); line-height: 1.7; }
+  .sigbox b { color: var(--text-2); }
+  .sigbox .kbref { color: var(--pri); text-decoration: none; font-weight: 600; }
+  .sigbox .kbref:hover { text-decoration: underline; }
+
+  .empty { text-align: center; padding: 70px 20px; background: #fff; border: 1px solid var(--border); border-radius: 14px; }
+  .empty .ic { font-size: 46px; margin-bottom: 14px; }
+  .empty .t { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .empty .d { font-size: 13px; color: var(--text-3); line-height: 1.8; }
+
+  .dcon { position: fixed; right: 16px; bottom: 16px; z-index: 90; }
+  .dtog { background: #1a2129; color: #fff; border: none; padding: 9px 16px; border-radius: 18px; cursor: pointer; font-size: 12px; }
+  .dpan { display: none; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(29,33,41,.18); padding: 13px; margin-bottom: 8px; width: 205px; }
+  .dpan.show { display: block; }
+  .dpan .pt2 { font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 8px; letter-spacing: 1px; }
+  .dpan button { display: block; width: 100%; margin-bottom: 6px; padding: 7px 10px; text-align: left; border: 1px solid var(--border); background: var(--bg); border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--text-2); }
+  .dpan button.on { background: var(--pri-soft); border-color: var(--pri); color: var(--pri); font-weight: 600; }
+
+  footer { text-align: center; padding: 34px 0 14px; font-size: 11px; color: var(--text-3); line-height: 1.8; }
+  footer b { color: var(--pri); }
+
+  @media (max-width: 760px) {
+    .steps { display: none; }
+    .tiers, .layers, .metrow, .dagrid, .goal2 { grid-template-columns: 1fr 1fr; }
+    .entry-grid { grid-template-columns: 1fr; }
+    .entry-desc { min-height: 0; }
+    .flow-row { grid-template-columns: 1fr; }
+    .quick-actions { flex-direction: column; gap: 6px; }
+    .dayrow { overflow-x: auto; grid-template-columns: repeat(7, 90px); }
+    .actbtns { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 20px; }
+    .authcard, .tlcard, .gcard, .h24card, .dacard, .mcard { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <div class="mtn">▲▲▲</div>
+      <div class="name">看山 · 创作校准引擎<small>诊断 → 处方 → 依据 · 方法论驱动</small></div>
+    </div>
+    <div class="steps" id="steps">
+      <div class="step active" data-step="1"><span class="dot">1</span>抓取</div>
+      <div class="step disabled" data-step="2"><span class="dot">2</span>轨迹</div>
+      <div class="step disabled" data-step="3"><span class="dot">3</span>校准</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div id="engstat" style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--border);font-size:12px;color:var(--text-2);">
+    <span id="engstat-dot" style="width:9px;height:9px;border-radius:50%;background:#ff7d00;flex-shrink:0;"></span>
+    <span id="engstat-txt">引擎状态：检查中（若一直停在这行，说明脚本未加载——按 Ctrl+F5 强制刷新）</span>
+  </div>
+  <div class="banner warn" id="banner">
+    <span class="icon" id="bicon">⚠️</span>
+    <span id="btext"></span>
+    <button class="retry" id="bretry" style="display:none" onclick="retryLoad()">重试</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ============ 屏1：最短进入路径 ============ -->
+  <section class="screen current" id="scr1">
+    <div class="hero">
+      <div class="mtn">▲ ▲ ▲</div>
+      <div class="hero-kicker">知乎创作者 · 数据校准</div>
+      <h1>先看清轨迹，再决定下一步</h1>
+      <p>抓取公开内容 → 本地计算基线 → 输出<b>诊断 + 处方 + 依据</b><br>失败不会白屏，错误会留在页面上，随时可以回到输入。</p>
+    </div>
+
+    <div class="flow-promise">
+      <span class="flow-chip">最短路径</span>
+      <b>输入账号</b><span>→</span><b>知乎 CLI / 公开数据</b><span>→</span><b>方法论分析</b><span>→</span><b>第二屏轨迹</b>
+    </div>
+
+    <div class="entry-grid">
+      <div class="entry-card official-entry">
+        <div class="entry-eyebrow">方式一 · 我的账号</div>
+        <div class="entry-title">授权读取我的创作数据</div>
+        <div class="entry-desc">走知乎官方开放平台 API。只读取当前授权账号的创作内容，Access Secret 只留在本机网关。</div>
+        <button class="authbtn" id="authbtn" onclick="startOfficial()">一键读取并生成轨迹 →</button>
+        <div class="entry-foot">适合：已有 Access Secret 的账号 · 不需要先经过额外页面</div>
+      </div>
+
+      <div class="entry-card cli-entry">
+        <div class="entry-eyebrow">方式二 · 公开账号</div>
+        <div class="entry-title">用知乎 CLI 抓取并分析</div>
+        <div class="entry-desc">优先调用官方 <b>zhihu-cli search zhihu</b>，再按 people ID 抓取对应公开主页、回答和文章，分析完成后自动返回第二屏。</div>
+        <label class="field-label" for="uid">知乎 ID 或主页链接</label>
+        <input class="uinput small" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/..." autocomplete="off">
+        <div class="flow-row">
+          <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
+          <button class="authbtn" id="pubbtn" onclick="startFetch()">CLI 抓取 →</button>
+        </div>
+        <div class="entry-foot" id="cliHint">CLI 可用时走官方搜索；账号列表由公开接口精确补齐。CLI 未安装/未授权时会明确提示并自动走公开数据兜底。</div>
+        <div class="ferr" id="ferr"></div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <button class="secondarybtn" onclick="startDemo()">先看演示数据</button>
+      <span>演示数据只用于体验，不代表真实账号</span>
+    </div>
+    <div class="flow-note">方法论正式源：<b>kanshan-kb</b>（M1-M10）。每条输出都保留「真实 / 推导 / 估算」标签；不知道的字段不硬编。</div>
+  </section>
+
+  <!-- ============ 加载中 ============ -->
+  <section class="screen" id="scrload">
+    <div class="loading">
+      <div class="spin"></div>
+      <p id="loadtxt">正在建立数据通道…</p>
+      <div class="loadlog" id="loadlog"></div>
+      <div class="load-error" id="load-error"></div>
+      <div class="load-actions" id="load-actions">
+        <button class="primary" onclick="goStep(1)">返回输入</button>
+        <button onclick="startDemo()">查看演示数据</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 屏2 三档时间轴 ============ -->
+  <section class="screen" id="scr2">
+    <div class="scr-head" id="tl-head">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <div class="scr-title">创作轨迹时间轴</div>
+        <span class="scr-tag" id="tier-tag">月度卡 · 战略层</span>
+      </div>
+      <div class="scr-sub" id="tl-range"></div>
+    </div>
+    <div class="srcbadges" id="srcbadges"></div>
+
+    <div class="tiernav" id="tiernav">
+      <div class="tbtn on" data-tier="m" onclick="setTier('m')"><div class="n">月度卡</div><div class="s">30 天聚合 · 战略层</div></div>
+      <span class="flow">▸</span>
+      <div class="tbtn" data-tier="w" onclick="setTier('w')"><div class="n">周度卡</div><div class="s">7 天聚合 · 战术层</div></div>
+      <span class="flow">▸</span>
+      <div class="tbtn" data-tier="d" onclick="setTier('d')"><div class="n">日度卡</div><div class="s">24 小时 · 执行层</div></div>
+    </div>
+
+    <!-- 月度 -->
+    <div class="tview on" id="tv-m">
+      <div class="metrow">
+        <div class="mcell"><div class="k">目标对齐分（0-100）<span class="tg est">估算</span></div><div class="v pri" id="m-align">—</div></div>
+        <div class="mcell"><div class="k">风格稳定性指数 <span class="tg est">推导</span></div><div class="v" id="m-stab">—</div></div>
+        <div class="mcell"><div class="k">表现最佳内容 <span class="tg ok">真实</span></div><div class="v up" id="m-best">—</div></div>
+        <div class="mcell"><div class="k">表现最差内容 <span class="tg ok">真实</span></div><div class="v down" id="m-worst">—</div></div>
+      </div>
+      <div class="tlcard">
+        <div class="lgd">
+          <span><i class="u"></i>高于基线（强）</span>
+          <span><i class="d"></i>低于基线（弱）</span>
+          <span>基线 = 全部抓取内容互动均值 <span class="tg ok">真实</span></span>
+          <span>点击节点 → 诊断详情</span>
+        </div>
+        <div class="tl-scroll"><div class="tl" id="tl"></div></div>
+        <div class="mlist">
+          <div class="mrow"><div class="mk">最有效动作 Top3</div><div class="mv" id="m-top3">—</div></div>
+          <div class="mrow"><div class="mk">最佳 / 最差</div><div class="mv" id="m-bw">—</div></div>
+          <div class="mrow"><div class="mk">疑似分发通道</div><div class="mv" id="m-route">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 周度 -->
+    <div class="tview" id="tv-w">
+      <div class="dayrow" id="dayrow"></div>
+      <div class="wkmet">
+        <div class="mrow"><div class="mk">本周表现最好的一天</div><div class="mv" id="w-best">—</div></div>
+        <div class="mrow"><div class="mk">历史最强发布日</div><div class="mv" id="w-strong">—</div></div>
+        <div class="mrow"><div class="mk">本周内容类型</div><div class="mv" id="w-type">—</div></div>
+        <div class="mrow"><div class="mk">撞题预警 Top3</div><div class="mv"><span class="tg est">需官方搜索接口</span> 待 OAuth 接入后开放</div></div>
+        <div class="mrow"><div class="mk">下周发布节奏建议</div><div class="mv" id="w-plan">—</div></div>
+      </div>
+    </div>
+
+    <!-- 日度 -->
+    <div class="tview" id="tv-d">
+      <div class="dayhead">
+        <div>
+          <div class="t" id="d-title">—</div>
+          <div class="z" id="d-sub">—</div>
+        </div>
+        <div class="sum" id="d-sum">—</div>
+      </div>
+      <div class="h24card">
+        <div class="tl-scroll"><div class="h24" id="h24"></div></div>
+      </div>
+      <div class="dagrid">
+        <div class="dacard">
+          <div class="dt">归因（M5 三路分发判定 + 可信度）</div>
+          <div id="d-attrs"></div>
+        </div>
+        <div class="dacard">
+          <div class="dt">下一步（当下决策）</div>
+          <div class="actbtns" id="d-acts"></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-3);text-align:center">
+        ↑ 返回上级：<a style="color:var(--pri);cursor:pointer" onclick="setTier('w')">周度卡</a> ·
+        <a style="color:var(--pri);cursor:pointer" onclick="setTier('m')">月度卡</a>
+      </div>
+    </div>
+
+    <div class="empty" id="empty" style="display:none">
+      <div class="ic">🌱</div>
+      <div class="t">该账号没有抓到公开内容</div>
+      <div class="d">可能内容为空、仅设为私密，或接口暂时受限。<br>演示提示：右下角「演示控制」可切换。</div>
+    </div>
+
+    <button class="nextbtn" id="nextbtn" onclick="goStep(3)">生成校准动作卡 →</button>
+  </section>
+
+  <!-- ============ 屏3 方法论校准 ============ -->
+  <section class="screen" id="scr3">
+    <div class="scr-head">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <div class="scr-title">校准动作卡 · 诊断 → 处方 → 依据</div>
+        <span class="scr-tag" id="kb-count">—</span>
+      </div>
+      <div class="scr-sub">由数据信号自动匹配 M1-M10 方法 · 归因克制：不知道就标注</div>
+    </div>
+
+    <div class="goal2">
+      <div class="gcard">
+        <div class="gt">账号目标（M1 定位）</div>
+        <div class="gmain" id="g-goal">—</div>
+        <div class="gsub" id="g-who">—</div>
+        <div class="gsub" style="margin-top:14px;color:var(--text-2)" id="g-align">—</div>
+      </div>
+      <div class="gcard">
+        <div class="gt">现在离目标多远</div>
+        <div class="pnum">
+          <span class="pnow" id="g-now">—</span>
+          <span class="ptgt" id="g-tgt">—</span>
+        </div>
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+        <div class="pnote" id="g-note">—</div>
+      </div>
+    </div>
+
+    <div class="kbtabs" id="kbtabs"></div>
+    <div id="mlist2"></div>
+  </section>
+
+  <footer>
+    <b>看山 · 创作校准引擎</b> · 2026 知乎黑客松校园新锐季<br>
+    数据接入层（公开接口实时抓取）+ 方法论层（M1-M10 知识库）+ 呈现层（月/周/日三档）<br>
+    方法论正式源：kanshan-kb 仓库（李俊祎填充中）· OAuth 密钥不进前端（官方红线）
+  </footer>
+</div>
+
+<!-- 诊断弹窗 -->
+<div class="mask" id="mask" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="xclose" onclick="closeModal()">✕</button>
+    <div class="mdate" id="m-date"></div>
+    <div class="mtitle" id="m-title"></div>
+    <div class="mgrid">
+      <div class="mcell2"><div class="k">表现（相对基线）<span class="tg" id="m-dtag"></span></div><div class="v" id="m-delta"></div></div>
+      <div class="mcell2"><div class="k">互动数（赞+评）<span class="tg" id="m-itag"></span></div><div class="v" id="m-interact"></div></div>
+      <div class="mcell2 full"><div class="k">① 诊断（对齐 M? 模块）</div><div class="v txt" id="m-diag"></div></div>
+      <div class="mcell2 full"><div class="k">② 处方（下一步动作）</div><div class="v adv" id="m-advice"></div></div>
+      <div class="mcell2 full"><div class="k">③ 依据（方法 + 数据信号）</div><div class="v txt" id="m-basis"></div></div>
+    </div>
+    <div class="mnote" id="m-note"></div>
+  </div>
+</div>
+
+<!-- 演示控制台 -->
+<div class="dcon">
+  <div class="dpan" id="dpan">
+    <div class="pt2">演示控制 · 官方检查项兜底</div>
+    <button data-mode="ok" class="on">✓ 正常数据</button>
+    <button data-mode="apiError">① 接口失败</button>
+    <button data-mode="quota">② 次数用完</button>
+    <button data-mode="empty">③ 没有数据</button>
+  </div>
+  <button class="dtog" onclick="document.getElementById('dpan').classList.toggle('show')">演示控制 ▾</button>
+</div>
+
+<script>
+/* =========================================================
+ * 看山 · 创作校准引擎
+ * L1 数据接入层：本地代理(127.0.0.1:8686)优先 → 公共中转降级
+ * L2 方法论层：内置 M1-M10 演示子集（格式兼容 kanshan-kb 仓库 md）
+ *              数据信号 → 方法匹配 → ①诊断②处方③依据
+ * L3 呈现层：月/周/日三档卡
+ * 红线：密钥/令牌不进前端。
+ * ========================================================= */
+
+/* ============ L2 方法论知识库（演示子集） ============
+ * 正式版读取 kanshan-kb 仓库 md（frontmatter: type/适用平台/适用阶段/数据信号）
+ * 此处内置的每条方法均含同样字段，供引擎匹配与「依据」引用。
+ * signal(A) 返回 {hit:bool, score:0-100, ctx:{...诊断上下文}}
+ */
+var KB = [
+  {
+    id: "M5-01", module: "M5", modName: "平台算法", title: "知乎三路分发 · 推荐流命中",
+    platform: "知乎(专项)", stage: "全阶段",
+    signalDesc: "单篇互动 ≥ 基线×1.5，疑似命中推荐流",
+    signal: function (A) {
+      var it = A.latest;
+      if (!it || A.base <= 0) return null;
+      var ratio = it.interact / A.base;
+      if (ratio < 1.5) return null;
+      return { score: Math.min(100, 60 + ratio * 10), ctx: { ratio: ratio } };
+    },
+    diag: function (c, A) { return "最新一篇互动为基线的 <b>" + c.ratio.toFixed(1) + " 倍</b>——数据特征符合知乎推荐流分发（关注流只会给基线量级，超基线 1.5 倍以上通常来自推荐流放量）。"; },
+    rx: function (c, A) { return ["48 小时内复制本篇结构发姊妹篇（推荐流命中的选题带宽已被验证）", "置顶本篇评论区高赞观点，接住推荐流二次回访", "把本篇选题关键词沉淀进选题库，标记为「推荐流验证款」"]; },
+    zhihu: "推荐流按互动率（赞同/曝光）在发布后 1-2 小时内决定是否放量；命中后互动可达基线数倍。"
+  },
+  {
+    id: "M3-01", module: "M3", modName: "选题", title: "选题矩阵 · 单篇低于基线",
+    platform: "知乎", stage: "成长期",
+    signalDesc: "最新一篇互动 < 基线×0.7",
+    signal: function (A) {
+      var it = A.latest;
+      if (!it || A.base <= 0) return null;
+      var ratio = it.interact / A.base;
+      if (ratio >= 0.7) return null;
+      return { score: Math.min(100, 55 + (1 - ratio) * 45), ctx: { ratio: ratio } };
+    },
+    diag: function (c, A) { return "最新一篇互动仅为基线的 <b>" + Math.round(c.ratio * 100) + "%</b>——低于你自己平均水准。注意：具体原因（曝光不足 or 点击率低）公开接口不可得，<b>不硬编原因</b>（归因克制）。"; },
+    rx: function (c, A) { return ["24h 内改标题为疑问式并补数据出处（可干预变量优先）", "对照选题矩阵：本篇选题是否在你历史高互动选题带宽内", "若 48h 后仍低于基线 50%，止损转复盘，不追加投入"]; },
+    zhihu: "知乎选题带宽=你历史高互动题目的交集；越贴近带宽，推荐流初始互动率越高。"
+  },
+  {
+    id: "M6-01", module: "M6", modName: "发布冷启动", title: "发布时机 · 历史强势日匹配",
+    platform: "知乎", stage: "成长期",
+    signalDesc: "存在历史最强发布日（≥2 篇样本且均值显著高）",
+    signal: function (A) {
+      if (A.bestW < 0 || !A.wk[A.bestW] || A.wk[A.bestW].n < 2) return null;
+      var baseAvg = A.base || 1;
+      var lift = A.bestWv / baseAvg;
+      if (lift < 1.15) return null;
+      return { score: Math.min(100, 40 + lift * 25), ctx: { lift: lift } };
+    },
+    diag: function (c, A) { return "你的发布数据存在明显强势日：<b>周" + A.WNAMES[A.bestW] + "</b>均值是整体基线的 <b>" + c.lift.toFixed(2) + " 倍</b>（" + A.wk[A.bestW].n + " 篇真实样本）。"; },
+    rx: function (c, A) { return ["下周" + A.WNAMES[A.bestW] + "固定为主推发布日", "发布时间叠加晚间高峰 20:00-22:00", "连续验证 3 周后把该时段写进账号 SOP"]; },
+    zhihu: "知乎流量在工作日晚间与周末上午有双峰；但个人强势日由自身粉丝活跃结构决定，以自己的数据为准。"
+  },
+  {
+    id: "M6-02", module: "M6", modName: "发布冷启动", title: "节奏断更预警",
+    platform: "知乎", stage: "全阶段",
+    signalDesc: "距最近一篇发布 > 7 天",
+    signal: function (A) {
+      if (!A.latest) return null;
+      var days = (Date.now() - A.latest.created) / 86400000;
+      if (days <= 7) return null;
+      return { score: Math.min(100, 45 + days * 2), ctx: { days: Math.round(days) } };
+    },
+    diag: function (c, A) { return "距你最近一次发布已 <b>" + c.days + " 天</b>（月更 4 篇 = 平均 7.5 天/篇），节奏正在偏离目标读者的关注衰减窗口。"; },
+    rx: function (c, A) { return ["72 小时内补发 1 篇（优先回答形态：生产成本低于文章）", "用历史最佳篇的结构做模板降低重启成本", "恢复节奏后再谈选项目标，先保频率后保质量"]; },
+    zhihu: "知乎关注流对 2 周以上不更新的账号会显著降低分发权重，重启成本高于维持。"
+  },
+  {
+    id: "M4-01", module: "M4", modName: "内容生产", title: "标题风格 A/B（疑问式 vs 陈述式）",
+    platform: "知乎", stage: "全阶段",
+    signalDesc: "两种标题风格均值差 ≥ 25%",
+    signal: function (A) {
+      if (A.qAvg <= 0 || A.sAvg <= 0) return null;
+      var hi = Math.max(A.qAvg, A.sAvg), lo = Math.min(A.qAvg, A.sAvg);
+      var diff = (hi - lo) / lo;
+      if (diff < 0.25) return null;
+      return { score: Math.min(100, 40 + diff * 80), ctx: { diff: diff, qWins: A.qAvg > A.sAvg } };
+    },
+    diag: function (c, A) { return "标题风格存在可量化差异：<b>" + (c.qWins ? "疑问式" : "陈述式") + "</b>均值高出另一风格 <b>" + Math.round(c.diff * 100) + "%</b>（真实互动数据推导）。"; },
+    rx: function (c, A) { return [c.qWins ? "新篇标题统一疑问式（How/为什么/怎么办）" : "新篇标题统一陈述式（结论前置）", "同选题做双标题小范围 A/B：一篇回答一篇文章", "把胜出风格写进内容 SOP，异常时再验证"]; },
+    zhihu: "知乎问题页流量天然偏好疑问式（与问题形态同构）；文章流量偏陈述式（搜索流匹配）。"
+  },
+  {
+    id: "M4-02", module: "M4", modName: "内容生产", title: "形态选择（回答 vs 文章）",
+    platform: "知乎", stage: "全阶段",
+    signalDesc: "回答与文章互动均值差 ≥ 30%",
+    signal: function (A) {
+      if (A.tAvg.answer == null || A.tAvg.article == null) return null;
+      var hi = Math.max(A.tAvg.answer, A.tAvg.article), lo = Math.min(A.tAvg.answer, A.tAvg.article);
+      var diff = (hi - lo) / lo;
+      if (diff < 0.3) return null;
+      return { score: Math.min(100, 40 + diff * 60), ctx: { diff: diff, ansWins: A.tAvg.answer > A.tAvg.article } };
+    },
+    diag: function (c, A) { return "形态效率差可量化：<b>" + (c.ansWins ? "回答" : "文章") + "</b>均值高出另一形态 <b>" + Math.round(c.diff * 100) + "%</b>。回答吃推荐流+搜索流双入口，文章利于长尾沉淀。"; },
+    rx: function (c, A) { return [c.ansWins ? "主战场切回答：每周 ≥3 篇，找高关注问题作答" : "主战场切文章：建专栏沉淀系列，标题带搜索关键词", "另一形态降级为引流位（附领域钩子）", "90 天后复检形态差是否收敛"]; },
+    zhihu: "回答挂在问题页下，共享问题的搜索权重与推荐分发；文章是独立 URL，靠标题关键词吃搜索长尾。"
+  },
+  {
+    id: "M7-01", module: "M7", modName: "粉丝互动", title: "评论率过低 · 互动引导缺失",
+    platform: "知乎", stage: "成长期",
+    signalDesc: "整体评论/互动比 < 6%",
+    signal: function (A) {
+      if (!A.posts.length) return null;
+      var cm = A.posts.reduce(function (s, p) { return s + p.comments; }, 0);
+      var im = A.posts.reduce(function (s, p) { return s + p.interact; }, 0);
+      if (im <= 0) return null;
+      var rate = cm / im;
+      if (rate >= 0.06) return null;
+      return { score: Math.min(100, 45 + (0.06 - rate) * 400), ctx: { rate: rate } };
+    },
+    diag: function (c, A) { return "评论仅占互动总量的 <b>" + (c.rate * 100).toFixed(1) + "%</b>（低于 6% 健康线）——读者在「赞了就走」，没有形成讨论场。"; },
+    rx: function (c, A) { return ["每篇结尾加一个可争议的具体问题（不是「你怎么看」）", "发布后 1h 内自己置顶一条补充观点，给评论区定调", "回复前 5 条评论（早期互动率会被算法二次放大）"]; },
+    zhihu: "知乎权重：赞同>收藏>评论>点击，但评论率影响「值得讨论」信号，触发二次推荐。"
+  },
+  {
+    id: "M1-01", module: "M1", modName: "定位与赛道", title: "风格稳定性收敛",
+    platform: "知乎", stage: "成长期",
+    signalDesc: "互动分布波动大（稳定性指数 < 45）",
+    signal: function (A) {
+      if (A.posts.length < 4 || A.stability <= 0) return null;
+      if (A.stability >= 45) return null;
+      return { score: Math.min(100, 55 + (45 - A.stability)), ctx: { stab: A.stability } };
+    },
+    diag: function (c, A) { return "风格稳定性指数 <b>" + c.stab + "/100</b>——互动量在你自己的内容间大起大落，账号尚未形成稳定的内容带宽，读者预期漂移。"; },
+    rx: function (c, A) { return ["砍掉互动后 50% 分位以下的选题类型（用真实分布，不凭感觉）", "固定 1 个内容框架连续产出 6 篇再评估", "人设签名/置顶内容与高互动选题对齐"]; },
+    zhihu: "账号标签由历史内容投票聚合；风格漂移会让推荐系统无法归类，分发效率下降。"
+  },
+  {
+    id: "M8-01", module: "M8", modName: "数据复盘", title: "基线复盘 · 快照增速监控",
+    platform: "知乎", stage: "全阶段",
+    signalDesc: "快照 ≥2 次时增速偏离目标路径",
+    signal: function (A) {
+      if (A.snaps.length < 2 || A.growthPerDay == null) return null;
+      var need = (GOAL - A.followers) / 180; // 6 个月目标折算
+      if (need <= 0) return null;
+      if (A.growthPerDay >= need) return null;
+      return { score: 60, ctx: { need: need, actual: A.growthPerDay } };
+    },
+    diag: function (c, A) { return "真实增速 <b>" + c.actual.toFixed(1) + " 粉/日</b>，低于 6 个月目标所需 <b>" + c.need.toFixed(1) + " 粉/日</b>（快照数据，" + A.snaps.length + " 次真实抓取）。"; },
+    rx: function (c, A) { return ["按目标缺口倒推每周必发篇数（数据信号驱动的排期）", "复盘近 4 周最佳篇，复制其结构而非凭感觉选题", "每日固定时点抓取快照，持续校准增速预估"]; },
+    zhihu: "复盘的价值在归因克制：区分「内容差」与「分发差」需要曝光数据（OAuth），先只优化可干预变量。"
+  },
+  {
+    id: "M5-02", module: "M5", modName: "平台算法", title: "知乎三路分发 · 搜索流沉淀",
+    platform: "知乎(专项)", stage: "成熟期",
+    signalDesc: "文章占比高且标题含具体关键词（搜索流友好结构）",
+    signal: function (A) {
+      if (!A.posts.length) return null;
+      var artRatio = A.posts.filter(function (p) { return p.type === "article"; }).length / A.posts.length;
+      if (artRatio < 0.5) return null;
+      return { score: 45, ctx: { artRatio: artRatio } };
+    },
+    diag: function (c, A) { return "你的内容 <b>" + Math.round(c.artRatio * 100) + "% 为文章</b>——文章是独立 URL，标题关键词直接吃知乎搜索与百度收录的长尾流量。"; },
+    rx: function (c, A) { return ["文章标题植入 1 个具体搜索词（如「宋代 外卖 考据」）", "把高赞回答升级为文章，标题重写为搜索句式", "每周 1 篇「常青题」文章，只服务搜索流不看短期互动"]; },
+    zhihu: "搜索流量是知乎三路中最稳定的一路：无时间衰减，持续数月；问题页权重高于文章页。"
+  },
+  {
+    id: "M1-02", module: "M1", modName: "定位与赛道", title: "目标对齐分监控",
+    platform: "知乎", stage: "全阶段",
+    signalDesc: "粉丝进度 < 50% 且距 6 个月窗口过半（常驻兜底）",
+    signal: function (A) {
+      if (!A.followersReal) return null; /* 粉丝口径不可得时不硬编（归因克制） */
+      var pct = A.followers / GOAL;
+      if (pct >= 0.5) return null;
+      return { score: 30, ctx: { pct: pct } };
+    },
+    diag: function (c, A) { return "目标进度 <b>" + Math.round(c.pct * 100) + "%</b>——若 6 个月目标窗口已过半，需要战略层调整而非战术层微调。"; },
+    rx: function (c, A) { return ["重估目标或延长窗口（先让目标可信，再谈路径）", "聚焦单一垂类打深度，放弃跨领域分散", "把月度目标对齐分纳入每周复盘固定项"]; },
+    zhihu: "目标对齐分=目标进度×0.8+风格稳定性×0.2（估算口径，权重可调）。"
+  }
+];
+/* M9 变现 / M10 合规：空壳占位（工单允许后置） */
+var KB_SHELL = [
+  { id: "M9", module: "M9", modName: "变现", title: "金字塔变现模型（后置）" },
+  { id: "M10", module: "M10", modName: "合规", title: "数据安全红线（已执行：OAuth 不进前端）" }
+];
+
+/* ---------- 演示数据（兜底） ---------- */
+var DEMO_POSTS = [
+  { date: "08-01", type: "article", title: "《红楼梦里贾母为什么不管宝玉早恋？》", voteup: 894, comments: 132 },
+  { date: "08-05", type: "answer", title: "《唐朝人一天吃几顿饭？》", voteup: 412, comments: 58 },
+  { date: "08-09", type: "pin", title: "想法｜睡前翻《西游记》发现的一个细节", voteup: 87, comments: 12 },
+  { date: "08-14", type: "article", title: "《宋代外卖员有多卷？》", voteup: 2310, comments: 340 },
+  { date: "08-20", type: "answer", title: "《职场新人该不该帮同事背锅？》", voteup: 156, comments: 44 },
+  { date: "08-25", type: "article", title: "《水浒传里的酒到底多少度？》", voteup: 720, comments: 96 },
+  { date: "08-30", type: "answer", title: "《为什么说苏轼是宋朝顶流？》", voteup: 1105, comments: 187 },
+  { date: "09-03", type: "pin", title: "想法｜放一张明天要写的明朝假期小考据", voteup: 344, comments: 21 },
+  { date: "09-06", type: "article", title: "《李世民玄武门之变的另一种读法》", voteup: 201, comments: 88 },
+  { date: "09-08", type: "answer", title: "《古人近视了怎么办？》", voteup: 1528, comments: 214 }
+];
+var DEMO_PROFILE = { name: "山人书房（演示）", id: "demo", followers: 5200, voteup_count: 6853, answer_count: 214, articles_count: 38, headline: "文史垂类深耕者" };
+
+/* ---------- 全局状态 ---------- */
+var curStep = 1, unlocked = 1, mode = "ok";
+var A = null, GOAL = 10000, kbFilter = "all";
+var KB_REPO = "https://github.com/jackyjinggit/kanshan-kb";
+
+/* ============ 流程控制 ============ */
+function goStep(s) {
+  var map = { 0: "scrload", 1: "scr1", 2: "scr2", 3: "scr3" };
+  if (!map[s]) return;
+  var target = document.getElementById(map[s]);
+  if (!target) return;
+  if ((s === 2 || s === 3) && !A) {
+    s = 1;
+    target = document.getElementById(map[s]);
+  }
+  curStep = s;
+  document.querySelectorAll(".screen").forEach(function (x) { x.classList.remove("current"); });
+  target.classList.add("current");
+  if (s > unlocked) unlocked = s;
+  renderSteps();
+  if (s === 3) setTimeout(animBar, 150);
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { window.scrollTo(0, 0); }
+}
+function renderSteps() {
+  document.querySelectorAll("#steps .step").forEach(function (el) {
+    var n = +el.dataset.step;
+    el.classList.toggle("active", n === curStep);
+    el.classList.toggle("done", n < unlocked && n !== curStep);
+    el.classList.toggle("disabled", n > unlocked);
+  });
+}
+document.querySelectorAll("#steps .step").forEach(function (el) {
+  el.addEventListener("click", function () { if (!el.classList.contains("disabled")) goStep(+el.dataset.step); });
+});
+
+/* ============ L1 数据接入层（官方开放平台 API · 本地网关） ============ */
+var GW = "http://localhost:8686"; /* 本地网关：密钥只留本机，不进前端 */
+var GW_OK = false, GW_SECRET = false, QUOTA = null;
+
+function gwFetch(path, timeoutMs) {
+  timeoutMs = timeoutMs || 10000;
+  return new Promise(function (resolve, reject) {
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs);
+    fetch(GW + path, ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function (r) { if (!r.ok) throw new Error("gw http " + r.status); return r.json(); })
+      .then(function (j) { clearTimeout(timer); resolve(j); })
+      .catch(function (e) { clearTimeout(timer); reject(e); });
+  });
+}
+
+function gwCheck() {
+  return gwFetch("/api/status", 2500).then(function (j) {
+    GW_OK = !!(j && j.ok); GW_SECRET = !!(j && j.secret);
+    window.__GW_STATUS = j || {};
+    return j;
+  }).catch(function () { GW_OK = false; GW_SECRET = false; throw new Error("gw down"); });
+}
+
+function gwQuota() {
+  return gwFetch("/api/quota", 6000).then(function (j) {
+    if (j && j.Code === 0 && j.Data && j.Data.length) {
+      var u = null;
+      (j.Data || []).forEach(function (d) { if (d.APIID === "user_data") u = d; });
+      QUOTA = u || j.Data[0];
+    }
+    return j;
+  }).catch(function () { return null; });
+}
+
+/* 官方 API：我的创作内容（最近 50 条，含赞/藏/评/原文链接） */
+function fetchMyContents() {
+  return gwFetch("/api/me/contents?limit=50", 20000);
+}
+
+/* 公开账号的完整链路：后端先调用官方 zhihu-cli，再返回对应账号数据。 */
+function fetchCliPublic(id, limit) {
+  /* 兜底链路（无头浏览器）全程 ~35s+，超时留足余量；2026-09-12 实测 35s 会掐掉即将完成的抓取 */
+  return gwFetch("/api/cli/public?uid=" + encodeURIComponent(id) + "&limit=" + encodeURIComponent(limit || 20), 120000);
+}
+
+/* 公开 V4 接口（任意账号 · 经本地网关 · 无需密钥） */
+function parseUid(s) {
+  s = (s || "").trim();
+  if (!s) return "";
+  var m = s.match(/people\/([^\/?&#\s]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  return s.replace(/^@/, "").replace(/[?#].*$/, "");
+}
+
+function fetchV4(url, timeoutMs) {
+  return gwFetch("/api/pub?u=" + encodeURIComponent(url), timeoutMs || 12000);
+}
+function zProfile(id) {
+  var inc = "follower_count,voteup_count,thanked_count,favorite_count,answer_count,articles_count,headline";
+  var u1 = "https://www.zhihu.com/api/v4/members/" + encodeURIComponent(id) + "?include=" + encodeURIComponent(inc);
+  var u2 = "https://www.zhihu.com/api/v4/members/" + encodeURIComponent(id);
+  return fetchV4(u1).catch(function () { return fetchV4(u2); });
+}
+function zAnswers(id) {
+  return fetchV4("https://www.zhihu.com/api/v4/members/" + encodeURIComponent(id) + "/answers?offset=0&limit=20&sort_by=created");
+}
+function zArticles(id) {
+  return fetchV4("https://www.zhihu.com/api/v4/members/" + encodeURIComponent(id) + "/articles?offset=0&limit=20&sort_by=created");
+}
+
+function saveSnap(id, followers) {
+  try {
+    var key = "kanshan_snaps_" + id;
+    var arr = JSON.parse(localStorage.getItem(key) || "[]");
+    var today = new Date().toISOString().slice(0, 10);
+    if (arr.length && arr[arr.length - 1].d === today) arr[arr.length - 1].f = followers;
+    else arr.push({ d: today, f: followers });
+    localStorage.setItem(key, JSON.stringify(arr));
+    return arr;
+  } catch (e) { return []; }
+}
+
+/* ============ 抓取主流程 ============ */
+function logLine(txt) {
+  var log = document.getElementById("loadlog");
+  var div = document.createElement("div");
+  div.className = "li";
+  div.textContent = txt;
+  log.appendChild(div);
+  return div;
+}
+function setLine(el, cls) { if (el) el.className = "li " + cls; }
+
+function resetLoadState() {
+  var log = document.getElementById("loadlog");
+  var err = document.getElementById("load-error");
+  var actions = document.getElementById("load-actions");
+  if (log) log.innerHTML = "";
+  if (err) { err.textContent = ""; err.classList.remove("show"); }
+  if (actions) actions.classList.remove("show");
+  var txt = document.getElementById("loadtxt");
+  if (txt) txt.textContent = "正在建立数据通道…";
+}
+
+function showLoadError(title, detail) {
+  var err = document.getElementById("load-error");
+  var actions = document.getElementById("load-actions");
+  if (err) {
+    err.textContent = title + (detail ? "\n" + detail : "");
+    err.classList.add("show");
+  }
+  if (actions) actions.classList.add("show");
+  var txt = document.getElementById("loadtxt");
+  if (txt) txt.textContent = "这次没有拿到数据，但页面没有退出";
+}
+
+function safeErrorText(e, fallback) {
+  var code = e && e.code ? "［" + e.code + "］" : "";
+  var message = e && (e.msg || e.message || e.Message) ? (e.msg || e.message || e.Message) : fallback;
+  return code + message;
+}
+
+function setLoadingButtons(officialBusy, publicBusy) {
+  var official = document.getElementById("authbtn");
+  var pub = document.getElementById("pubbtn");
+  if (official) { official.disabled = !!officialBusy; official.textContent = officialBusy ? "读取中…" : "一键读取并生成轨迹 →"; }
+  if (pub) { pub.disabled = !!publicBusy; pub.textContent = publicBusy ? "CLI 抓取 + 分析中…" : "CLI 抓取 →"; }
+}
+
+function finishToTimeline() {
+  if (!A) throw new Error("分析结果为空");
+  unlocked = Math.max(unlocked, 2);
+  goStep(2);
+  renderAll();
+}
+
+/* ============ 方式一：官方 API 读取「我的创作数据」 ============ */
+function startOfficial() {
+  try {
+  var ferr = document.getElementById("ferr");
+  if (ferr) ferr.classList.remove("show");
+  setLoadingButtons(true, false);
+  resetLoadState();
+  goStep(0);
+
+  var l1 = logLine("① 连接本地网关（官方开放平台 API）");
+  var l2 = logLine("② 校验密钥（Access Secret 只留本机，不进前端）");
+  var l3 = logLine("③ 读取「我的创作数据」（最近 50 条 · 赞/藏/评）");
+  var l4 = logLine("④ 查询今日 API 剩余额度");
+  var l5 = logLine("⑤ 计算基线 / 数据信号");
+  var l6 = logLine("⑥ 匹配 M1-M10 方法论，生成诊断→处方→依据");
+  setTimeout(function () { setLine(l1, "doing"); }, 50);
+
+  var contents = null;
+  gwCheck()
+    .then(function () {
+      setLine(l1, "done"); setLine(l2, "doing");
+      if (!GW_SECRET) { setLine(l2, "fail"); throw { code: "NO_SECRET" }; }
+      setLine(l2, "done"); setLine(l3, "doing");
+      return fetchMyContents();
+    })
+    .then(function (res) {
+      if (!res || res.Code !== 0) { setLine(l3, "fail"); throw { code: res ? res.Code : "GW_NORESP", msg: res ? res.Message : "网关无响应" }; }
+      var items = (res.Data && res.Data.Items) || [];
+      if (!items.length) { setLine(l3, "fail"); throw { code: "EMPTY" }; }
+      contents = res; setLine(l3, "done"); setLine(l4, "doing");
+      return gwQuota();
+    })
+    .then(function () {
+      setLine(l4, QUOTA ? "done" : "fail"); setLine(l5, "doing");
+      A = buildAnalysis("official", "me", null, contents, null, []);
+      matchKB();
+      setLine(l5, "done"); setLine(l6, "done");
+      setLoadingButtons(false, false);
+      finishToTimeline();
+    })
+    .catch(function (e) {
+      setLoadingButtons(false, false);
+      var msg = "", hint = "";
+      var c = e && e.code;
+      if (c === "GW_DOWN" || (e instanceof Error && /gw down|Failed to fetch|NetworkError/i.test(e.message || ""))) {
+        msg = "本地网关未启动";
+        hint = "打开 frontend 文件夹，双击 <b>启动.bat</b>，等黑窗口显示「服务已启动」、浏览器打开 <b>http://localhost:8686/</b> 后再点本按钮。没装 Python？到 python.org 安装（勾选 Add to PATH）。也可用方式二或演示数据。";
+      } else if (c === "NO_SECRET") {
+        msg = "本机未配置 Access Secret";
+        hint = "两步：① 打开 <a href='https://developer.zhihu.com/profile' target='_blank' style='color:var(--pri)'>developer.zhihu.com/profile</a> 生成密钥；② 把密钥粘贴进 frontend 文件夹下的 <b>secret.txt</b>（启动.bat 会自动创建空文件，填入保存即可），然后重启 <b>启动.bat</b>。暂无密钥？用方式二或演示数据。";
+      } else if (c === "EMPTY") {
+        msg = "官方接口返回空（该账号暂无公开创作内容）";
+        hint = "新号/内容均为私密时属正常。可先看演示数据，或用方式二抓取任意公开账号。";
+      } else if (c === 20001) {
+        msg = "密钥无效（官方鉴权失败）";
+        hint = "Access Secret 不对或已失效：到 developer.zhihu.com/profile 重新生成，更新 secret.txt 后重启 启动.bat。";
+      } else if (c === 30001 || c === 30002) {
+        msg = "今日额度用完 / 调用频率受限（" + esc((e && e.msg) || "") + "）";
+        hint = "官方红线要求缓存去重——本网关已做 60 秒缓存。明天额度刷新后再抓，或先看演示数据。";
+      } else {
+        msg = (e && (e.msg || e.message)) || "网络异常";
+        hint = "重启 启动.bat 再试一次；仍失败就用方式二或演示数据。";
+      }
+      if (ferr) {
+        ferr.innerHTML = "读取失败：<b>" + esc(msg) + "</b><br>" + hint;
+        ferr.classList.add("show");
+      }
+      showLoadError("官方读取没有完成：" + msg, "页面已安全返回首屏。" + (hint ? "\n" + hint.replace(/<[^>]+>/g, "") : ""));
+    });
+  } catch (e) {
+    setLoadingButtons(false, false);
+    var f2 = document.getElementById("ferr");
+    if (f2) {
+      f2.innerHTML = "程序内部错误（已捕获，不致命）：<b>" + esc(e && e.message ? e.message : String(e)) + "</b>——把这句话截图发开发者，可立即修复。";
+      f2.classList.add("show");
+    }
+    showLoadError("官方读取发生内部错误", safeErrorText(e, "未知错误"));
+  }
+}
+
+/* ============ 方式二：知乎 CLI + 对应公开账号抓取 ============ */
+function startFetch() {
+  try {
+  var rawUid = document.getElementById("uid").value;
+  var id = parseUid(rawUid);
+  var goalTxt = document.getElementById("ugoal").value.replace(/[,，\s]/g, "");
+  var ferr = document.getElementById("ferr");
+  if (ferr) ferr.classList.remove("show");
+  if (!id) {
+    if (ferr) {
+      ferr.innerHTML = "请先输入知乎 ID：打开你的知乎主页，链接 zhihu.com/people/ 后面那一段就是（直接粘贴完整主页链接也可以）。";
+      ferr.classList.add("show");
+    }
+    return;
+  }
+  GOAL = parseInt(goalTxt, 10) || 10000;
+
+  setLoadingButtons(false, true);
+  resetLoadState();
+  goStep(0);
+
+  var l1 = logLine("① 连接本地网关 + 官方 zhihu-cli");
+  var l2 = logLine("② 用 CLI 搜索知乎账号关联内容");
+  var l3 = logLine("③ 抓取该 people ID 的公开主页");
+  var l4 = logLine("④ 抓取对应回答 / 文章");
+  var l5 = logLine("⑤ 本地计算基线 / 数据信号");
+  var l6 = logLine("⑥ 匹配 M1-M10，完成后自动进入第二屏");
+  setTimeout(function () { setLine(l1, "doing"); }, 50);
+
+  fetchCliPublic(id, 20)
+    .then(function (res) {
+      if (!res || res.Code !== 0 || !res.Data) {
+        var error = new Error((res && res.Message) || "知乎 CLI / 公开接口没有返回数据");
+        error.code = res && res.Code;
+        error.payload = res;
+        throw error;
+      }
+      setLine(l1, "done"); setLine(l2, "done");
+      var cliMeta = res.Data.CLISearch || {};
+      document.getElementById("loadtxt").textContent = cliMeta.used
+        ? "官方 CLI 已返回关联结果，继续整理该账号的公开内容…"
+        : "CLI 暂不可用，已切换到公开账号数据整理…";
+      setLine(l3, "done");
+      setLine(l4, "done");
+      var profile = res.Data.Profile || null;
+      var as = res.Data.Answers || null;
+      var ar = res.Data.Articles || null;
+      setLine(l5, "doing");
+      var snaps = (profile && typeof profile.follower_count === "number") ? saveSnap(id, profile.follower_count) : [];
+      A = buildAnalysis("live", id, profile, as, ar, snaps);
+      A.cli = cliMeta;
+      matchKB();
+      setLine(l5, "done"); setLine(l6, "done");
+      setLoadingButtons(false, false);
+      finishToTimeline();
+    })
+    .catch(function (err) {
+      setLoadingButtons(false, false);
+      var code = err && err.code;
+      var payload = err && err.payload;
+      var msg = safeErrorText(err, "网络不可达");
+      var hint = code === "CLI_NOT_INSTALLED"
+        ? "官方 zhihu-cli 尚未安装：先安装并初始化 CLI，或直接切换到「演示数据」。"
+        : code === "AUTH_REQUIRED" || code === "AUTH_INVALID"
+          ? "CLI 需要 Access Secret。请先完成知乎开放平台授权；本页面不会回显或保存密钥。"
+          : "检查 启动.bat 与本地网关；若公开接口受限，页面已保留错误并可直接看演示数据。";
+      if (payload && payload.CLI && payload.CLI.status === "missing") hint = "官方 CLI 未安装，已阻止伪装成 CLI 成功。安装后重启启动.bat即可；也可先看演示数据。";
+      if (ferr) {
+        ferr.innerHTML = "抓取失败：<b>" + esc(msg) + "</b><br>" + esc(hint);
+        ferr.classList.add("show");
+      }
+      showLoadError("CLI 抓取没有完成", msg + "\n" + hint);
+    });
+  } catch (e) {
+    setLoadingButtons(false, false);
+    var f2 = document.getElementById("ferr");
+    if (f2) {
+      f2.innerHTML = "程序内部错误（已捕获，不致命）：<b>" + esc(e && e.message ? e.message : String(e)) + "</b>——把这句话截图发开发者，可立即修复。";
+      f2.classList.add("show");
+    }
+    showLoadError("CLI 抓取发生内部错误", safeErrorText(e, "未知错误"));
+  }
+}
+
+function startDemo() {
+  resetLoadState();
+  setLoadingButtons(false, false);
+  A = buildAnalysis("demo", DEMO_PROFILE.id, DEMO_PROFILE, null, null, []);
+  matchKB();
+  unlocked = 2;
+  goStep(2);
+  renderAll();
+}
+function retryLoad() { setMode("ok"); goStep(1); }
+
+/* ============ 分析引擎 ============ */
+function fmtN(n) { return (n || 0).toLocaleString("zh-CN"); }
+function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function short(s, n) { s = String(s); return s.length > n ? s.slice(0, n) + "…" : s; }
+function fmtDate(ts) { var d = new Date(ts); return ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+function fmtDateY(ts) { var d = new Date(ts); return d.getFullYear() + "-" + fmtDate(ts); }
+function avg(arr) { return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) / arr.length : 0; }
+var WNAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+function buildAnalysis(source, id, profile, answers, articles, snaps) {
+  var posts = [], ansOK = false, artOK = false;
+  if (source === "official") {
+    /* 官方开放平台 API：/api/v1/user/contents（本人创作，含赞/藏/评/原文链接） */
+    var items = (answers && answers.Data && answers.Data.Items) || [];
+    items.forEach(function (it) {
+      posts.push({
+        type: it.ContentType || "answer",
+        title: it.Title || "（无题）",
+        url: it.Url || "",
+        voteup: it.LikeCount || 0,
+        fav: it.FavoriteCount || 0,
+        comments: it.CommentCount || 0,
+        created: (it.CreatedAt || 0) * 1000
+      });
+    });
+    posts.sort(function (x, y) { return y.created - x.created; });
+    ansOK = posts.some(function (p) { return p.type === "answer"; });
+    artOK = posts.some(function (p) { return p.type === "article"; });
+  } else if (source === "live") {
+    if (answers && answers.data) {
+      ansOK = true;
+      answers.data.forEach(function (a) {
+        /* 缺 created_time 的条目（如置顶卡）会算成 epoch 0=1970，压坏时间轴比例——直接跳过 */
+        if (!a.created_time) return;
+        posts.push({ type: "answer", title: (a.question && a.question.title) ? a.question.title : "（回答）", voteup: a.voteup_count || 0, comments: a.comment_count || 0, created: a.created_time * 1000 });
+      });
+    }
+    if (articles && articles.data) {
+      artOK = true;
+      articles.data.forEach(function (a) {
+        var ct = a.created || a.created_time;
+        if (!ct) return;
+        /* 知乎文章接口 created 是秒；new Date(秒) 被当毫秒解会落到 1970-01-21——数字按秒*1000 */
+        var ms = (typeof ct === "number") ? ct * 1000 : new Date(ct).getTime();
+        if (!ms || ms <= 0) return;
+        posts.push({ type: "article", title: a.title || "（文章）", voteup: a.voteup_count || 0, comments: a.comment_count || 0, created: ms });
+      });
+    }
+    posts.sort(function (x, y) { return y.created - x.created; });
+  } else {
+    DEMO_POSTS.forEach(function (p) {
+      posts.push({ type: p.type, title: p.title, voteup: p.voteup, comments: p.comments, created: new Date("2026-" + p.date + "T12:00:00+08:00").getTime() });
+    });
+  }
+
+  var interacts = posts.map(function (p) { return (p.voteup || 0) + (p.comments || 0) + (p.fav || 0); });
+  var base = avg(interacts);
+  var maxI = interacts.length ? Math.max.apply(null, interacts) : 0;
+  posts.forEach(function (p) {
+    p.interact = (p.voteup || 0) + (p.comments || 0) + (p.fav || 0);
+    p.up = base > 0 && p.interact >= base;
+    p.ratio = base > 0 ? p.interact / base : 1;
+  });
+  var best = posts.length ? posts.reduce(function (a, b) { return a.interact >= b.interact ? a : b; }) : null;
+  var worst = posts.length ? posts.reduce(function (a, b) { return a.interact <= b.interact ? a : b; }) : null;
+
+  var wk = {};
+  posts.forEach(function (p) {
+    var w = new Date(p.created).getDay();
+    if (!wk[w]) wk[w] = { n: 0, sum: 0 };
+    wk[w].n++; wk[w].sum += p.interact;
+  });
+  var bestW = -1, bestWv = 0;
+  for (var w in wk) { var v = wk[w].sum / wk[w].n; if (v > bestWv) { bestWv = v; bestW = +w; } }
+
+  var tAvg = {};
+  ["answer", "article", "pin", "zvideo"].forEach(function (t) {
+    var arr = posts.filter(function (p) { return p.type === t; }).map(function (p) { return p.interact; });
+    if (arr.length) tAvg[t] = avg(arr);
+  });
+  var qAvg = avg(posts.filter(function (p) { return /[?？]/.test(p.title); }).map(function (p) { return p.interact; }));
+  var sAvg = avg(posts.filter(function (p) { return !/[?？]/.test(p.title); }).map(function (p) { return p.interact; }));
+
+  var stability = 0;
+  if (interacts.length >= 4 && base > 0) {
+    var sd = Math.sqrt(avg(interacts.map(function (x) { return (x - base) * (x - base); })));
+    stability = Math.max(0, Math.min(100, Math.round(100 - (sd / base) * 60)));
+  }
+
+  var snaps2 = snaps || [];
+  var growthPerDay = null;
+  if (snaps2.length >= 2) {
+    var d1 = new Date(snaps2[0].d), d2 = new Date(snaps2[snaps2.length - 1].d);
+    var days = Math.max(1, (d2 - d1) / 86400000);
+    growthPerDay = (snaps2[snaps2.length - 1].f - snaps2[0].f) / days;
+  }
+
+  var followers = profile ? (profile.follower_count != null ? profile.follower_count : null) : null;
+  return {
+    source: source, id: id,
+    /* 内容接口是否双双受限（live 模式下 Answers/Articles 均为 null = 两个内容源都没抓到）。
+       此时时间轴不能说「无发布」（那是事实判断），只能说「无数据」（接口判断）——不知道就标不知道 */
+    contentBlocked: source === "live" ? (!answers && !articles) : false,
+    name: profile ? (profile.name || id) : (source === "official" ? "我的知乎账号（官方 API）" : "演示账号"),
+    headline: profile ? (profile.headline || "") : "",
+    followers: (followers != null) ? followers : (source === "demo" ? DEMO_PROFILE.followers : null),
+    followersReal: followers != null,
+    voteupTotal: profile ? (profile.voteup_count || 0) : DEMO_PROFILE.voteup_count,
+    ansOK: ansOK, artOK: artOK,
+    posts: posts, base: base, maxI: maxI,
+    best: best, worst: worst,
+    wk: wk, bestW: bestW, bestWv: bestWv, WNAMES: WNAMES,
+    tAvg: tAvg, qAvg: qAvg, sAvg: sAvg,
+    stability: stability,
+    snaps: snaps2, growthPerDay: growthPerDay,
+    latest: posts.length ? posts[0] : null,
+    fetchedAt: new Date()
+  };
+}
+
+/* ============ L2 方法论匹配引擎 ============ */
+var MATCHED = [];
+function matchKB() {
+  MATCHED = [];
+  KB.forEach(function (m) {
+    try {
+      var r = m.signal(A);
+      if (r && r.hit !== false && r.score >= 25) {
+        MATCHED.push({ m: m, score: Math.round(r.score), ctx: r.ctx });
+      }
+    } catch (e) { /* 信号计算失败即不匹配，静默 */ }
+  });
+  MATCHED.sort(function (a, b) { return b.score - a.score; });
+}
+
+/* ============ 渲染总入口 ============ */
+function renderAll() {
+  renderSrcBadges();
+  renderMonthView();
+  renderWeekView();
+  renderDayView();
+  renderScreen3();
+}
+
+function renderSrcBadges() {
+  var el = document.getElementById("srcbadges");
+  var h = "";
+  if (A.source === "official") {
+    var t = ("0" + A.fetchedAt.getHours()).slice(-2) + ":" + ("0" + A.fetchedAt.getMinutes()).slice(-2);
+    h += '<span class="tg ok">知乎官方开放平台 API · ' + t + '</span>';
+    h += '<span class="tg ok">' + esc(A.name) + '</span>';
+    h += '<span class="tg ok">创作内容 ' + A.posts.length + ' 条（赞/藏/评 · 官方真实字段）</span>';
+    h += '<span class="tg est">粉丝数：官方用户接口不含该字段，不硬编</span>';
+    if (QUOTA) h += '<span class="tg ' + (QUOTA.RemainingQuota > 0 ? "ok" : "est") + '">今日 API 额度剩 ' + fmtN(QUOTA.RemainingQuota) + '/' + fmtN(QUOTA.TotalQuota) + '（' + esc(QUOTA.APIName || "用户数据") + '·真实）</span>';
+    h += '<span class="tg pri">命中方法 ' + MATCHED.length + ' 条</span>';
+  } else if (A.source === "live") {
+    var t = ("0" + A.fetchedAt.getHours()).slice(-2) + ":" + ("0" + A.fetchedAt.getMinutes()).slice(-2);
+     h += '<span class="tg ok">知乎公开账号数据 · ' + t + '</span>';
+     h += '<span class="tg ok">账号：' + esc(A.name) + '</span>';
+    h += A.followersReal ? '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>' : '<span class="tg est">粉丝快照受限</span>';
+    h += '<span class="tg ' + (A.ansOK ? "ok" : "est") + '">回答 ' + (A.ansOK ? A.posts.filter(function (p) { return p.type === "answer"; }).length + " 篇（真实）" : "接口受限") + '</span>';
+    h += '<span class="tg ' + (A.artOK ? "ok" : "est") + '">文章 ' + (A.artOK ? A.posts.filter(function (p) { return p.type === "article"; }).length + " 篇（真实）" : "接口受限") + '</span>';
+     h += '<span class="tg pri">命中方法 ' + MATCHED.length + ' 条</span>';
+     if (A.cli && A.cli.used) h += '<span class="tg ok">官方 zhihu-cli 已接入 · 搜索结果 ' + fmtN(A.cli.result_count || 0) + ' 条</span>';
+     else if (A.cli) h += '<span class="tg est">官方 CLI 未完成调用 · 公开数据兜底</span>';
+    if (A.snaps.length >= 2) h += '<span class="tg ok">快照 ' + A.snaps.length + ' 次 · 真实增速已积累</span>';
+    else h += '<span class="tg est">快照积累 ' + A.snaps.length + '/2（隔天再抓即出增速）</span>';
+  } else {
+    h += '<span class="tg demo">演示数据（非真实）· 手动体验</span>';
+  }
+  el.innerHTML = h;
+}
+
+/* ============ 月度视图 ============ */
+function renderMonthView() {
+  var el = document.getElementById("tl");
+  el.innerHTML = "";
+  var axis = document.createElement("div");
+  axis.className = "axis";
+  el.appendChild(axis);
+
+  if (!A.posts.length) {
+    document.getElementById("tl-range").textContent = "未抓到公开内容";
+    ["m-align", "m-stab", "m-best", "m-worst", "m-top3", "m-bw", "m-route"].forEach(function (id) { document.getElementById(id).textContent = "—"; });
+    return;
+  }
+  var pts = A.posts.slice().sort(function (a, b) { return a.created - b.created; });
+  var start = pts[0].created, end = pts[pts.length - 1].created;
+  var span = Math.max(1, end - start);
+  document.getElementById("tl-range").textContent = fmtDateY(start) + " ~ " + fmtDateY(end) + " · " + A.name + " · " + A.posts.length + " 篇公开内容";
+
+  pts.forEach(function (it, idx) {
+    var x = 3 + (it.created - start) / span * 94;
+    var off = -Math.max(-46, Math.min(46, (it.interact / Math.max(1, A.maxI)) * 46));
+    var pct = Math.round((it.ratio - 1) * 100);
+    var p = document.createElement("div");
+    p.className = "pt " + (it.up ? "up" : "down");
+    p.style.left = x + "%";
+    p.style.marginTop = off + "px";
+    p.innerHTML =
+      '<div class="pv">' + (pct >= 0 ? "+" + pct : pct) + '%</div>' +
+      '<div class="pd"></div>' +
+      '<div class="ptd">' + fmtDate(it.created) + '</div>' +
+      '<div class="ptyp" style="top:' + (it.up ? "42px" : "-48px") + '">' + (TYPL[it.type] || "·") + '</div>';
+    var d = p.querySelector(".ptd");
+    if (idx % 2 === 1) { d.style.top = "auto"; d.style.bottom = it.up ? "-28px" : "44px"; }
+    p.addEventListener("click", function () { openModal(it); });
+    el.appendChild(p);
+  });
+
+  if (A.followersReal) {
+    var goalPct = Math.min(100, Math.round(A.followers / GOAL * 100));
+    var align = Math.max(5, Math.min(99, Math.round(goalPct * 0.8 + A.stability * 0.2)));
+    document.getElementById("m-align").innerHTML = align + '<small> · 目标进度 ' + goalPct + '%</small>';
+  } else {
+    document.getElementById("m-align").innerHTML = '<small style="font-size:12px;color:var(--text-3)">粉丝口径不可得（官方接口无此字段，不硬编）</small>';
+  }
+  document.getElementById("m-stab").innerHTML = A.posts.length >= 4 ? A.stability + '<small> / 100</small>' : '<small>样本不足</small>';
+  document.getElementById("m-best").innerHTML = "+" + fmtN(A.best.interact) + '<small> · ' + esc(short(A.best.title, 10)) + '</small>';
+  document.getElementById("m-worst").innerHTML = fmtN(A.worst.interact) + '<small> · ' + esc(short(A.worst.title, 10)) + '</small>';
+
+  var tops = [];
+  var bestType = null, bestTypeV = 0;
+  for (var t in A.tAvg) if (A.tAvg[t] > bestTypeV) { bestTypeV = A.tAvg[t]; bestType = t; }
+  if (bestType) tops.push((bestType === "answer" ? "回答" : bestType === "article" ? "文章" : "想法") + "形态（均 " + Math.round(bestTypeV) + " 互动/篇）");
+  if (A.qAvg > 0 && A.sAvg > 0) tops.push(A.qAvg >= A.sAvg ? "疑问式标题（均 " + Math.round(A.qAvg) + "）＞陈述式（" + Math.round(A.sAvg) + "）" : "陈述式标题（均 " + Math.round(A.sAvg) + "）＞疑问式（" + Math.round(A.qAvg) + "）");
+  if (A.bestW >= 0 && A.wk[A.bestW]) tops.push("周" + WNAMES[A.bestW] + "发布（均 " + Math.round(A.bestWv) + "/篇）");
+  document.getElementById("m-top3").innerHTML = tops.map(function (x, i) { return "①②③"[i] + " " + x; }).join("<br>") || "样本不足";
+
+  document.getElementById("m-bw").innerHTML =
+    '<span class="best">' + esc(short(A.best.title, 16)) + ' +' + fmtN(A.best.interact) + '</span> ｜ <span class="worst">' + esc(short(A.worst.title, 16)) + ' ' + fmtN(A.worst.interact) + '</span>';
+
+  var routeTxt;
+  if (A.latest && A.base > 0 && A.latest.ratio >= 1.5) {
+    routeTxt = '最新篇超基线 ' + A.latest.ratio.toFixed(1) + ' 倍 → <b>疑似推荐流放量</b>（M5）';
+  } else if (A.posts.filter(function (p) { return p.type === "article"; }).length / Math.max(1, A.posts.length) >= 0.5) {
+    routeTxt = '文章占比 ≥50% → <b>偏搜索流长尾结构</b>（M5）';
+  } else {
+    routeTxt = '互动量级接近基线 → <b>以关注流为主</b>（M5）· 推荐流命中判定需曝光数据（OAuth）';
+  }
+  document.getElementById("m-route").innerHTML = routeTxt + ' <span class="tg est">判定为推导</span>';
+}
+
+/* ============ 周度视图 ============ */
+function renderWeekView() {
+  var row = document.getElementById("dayrow");
+  row.innerHTML = "";
+  var now = new Date();
+  var dayBase = new Date(now); dayBase.setHours(0, 0, 0, 0);
+  var dow = (dayBase.getDay() + 6) % 7;
+  dayBase.setDate(dayBase.getDate() - dow);
+
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(dayBase); d.setDate(d.getDate() + i);
+    var next = new Date(d); next.setDate(next.getDate() + 1);
+    var posts = A.posts.filter(function (p) { return p.created >= d.getTime() && p.created < next.getTime(); });
+    var hasLatest = posts.indexOf(A.latest) >= 0;
+    var cell = document.createElement("div");
+    var dd = ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    var isFuture = d > now, isToday = d.toDateString() === now.toDateString();
+    var wname = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][i];
+    if (isFuture) {
+      var isStrong = A.bestW >= 0 && ((A.bestW + 6) % 7) === i;
+      cell.className = "dcell plan";
+      cell.innerHTML = '<div class="dw">' + wname + '</div><div class="dd">' + dd + '</div><div class="dv">' + (isStrong ? "建议主推" : "机动") + '</div><div class="dc">' + (isStrong ? "历史强势日(M6)" : "") + '</div>';
+    } else if (posts.length) {
+      var total = posts.reduce(function (a, b) { return a + b.interact; }, 0);
+      var up = A.base > 0 && total / posts.length >= A.base;
+      cell.className = "dcell" + (hasLatest ? " click" : "");
+      if (hasLatest) {
+        var tag = document.createElement("div"); tag.className = "drilltag"; tag.textContent = "点开下钻 ▸";
+        cell.appendChild(tag);
+        cell.addEventListener("click", function () { setTier("d"); });
+      }
+      var inner = document.createElement("div");
+      inner.innerHTML = '<div class="dw">' + wname + (isToday ? " ·今天" : "") + '</div><div class="dd">' + dd + '</div><div class="dv ' + (up ? "up" : "down") + '">' + (up ? "+" : "") + total + '</div><div class="dc">' + posts.length + " 篇 · " + esc(short(posts[0].title, 10)) + '</div>';
+      cell.appendChild(inner);
+    } else {
+      cell.className = "dcell";
+      cell.innerHTML = A.contentBlocked
+        ? '<div class="dw">' + wname + (isToday ? " ·今天" : "") + '</div><div class="dd">' + dd + '</div><div class="dv flat">–</div><div class="dc">接口受限·无数据</div>'
+        : '<div class="dw">' + wname + (isToday ? " ·今天" : "") + '</div><div class="dd">' + dd + '</div><div class="dv flat">0</div><div class="dc">无发布</div>';
+    }
+    row.appendChild(cell);
+  }
+
+  var weekPosts = A.posts.filter(function (p) { return p.created >= dayBase.getTime(); });
+  var wBest = weekPosts.length ? weekPosts.reduce(function (a, b) { return a.interact >= b.interact ? a : b; }) : null;
+  document.getElementById("w-best").innerHTML = wBest
+    ? "<b>" + WNAMES[new Date(wBest.created).getDay()] + "</b>——" + esc(short(wBest.title, 22)) + "（" + fmtN(wBest.interact) + ' 互动 <span class="tg ok">真实</span>）'
+    : (A.contentBlocked ? '本周无数据（内容接口受限，无法判读发布情况）' : "本周暂无发布");
+  document.getElementById("w-strong").innerHTML = A.bestW >= 0 && A.wk[A.bestW]
+    ? "<b>" + WNAMES[A.bestW] + "</b>（历史均 " + Math.round(A.bestWv) + " 互动/篇，" + A.wk[A.bestW].n + ' 篇样本 <span class="tg ok">真实</span> · M6 依据）'
+    : "样本不足（≥2 篇后可判）";
+  var tArr = weekPosts.map(function (p) { return TYPW[p.type] || p.type; });
+  var typeTxt = tArr.length ? "本周发布 " + tArr.length + " 篇：" + esc(tArr.join("、")) : (A.contentBlocked ? "本周无数据（内容接口受限）" : "本周无发布");
+  var bestT = (A.tAvg.answer != null && A.tAvg.article != null) ? (A.tAvg.answer >= A.tAvg.article ? "回答" : "文章") : (A.tAvg.answer != null ? "回答" : A.tAvg.article != null ? "文章" : null);
+  if (bestT) typeTxt += "；历史最有效：<b>" + bestT + "</b>（M4 依据）";
+  document.getElementById("w-type").innerHTML = typeTxt;
+  document.getElementById("w-plan").innerHTML = A.bestW >= 0
+    ? "<b>下周" + WNAMES[A.bestW] + "</b>安排主推" + (A.best ? "（结构参考：《" + esc(short(A.best.title, 14)) + "》）" : "")
+    : "积累发布数据后自动生成";
+}
+
+/* ============ 日度视图（M5 三路分发归因） ============ */
+function renderDayView() {
+  var it = A.latest;
+  if (!it) {
+    document.getElementById("d-title").textContent = "暂无公开内容";
+    document.getElementById("d-sub").textContent = "该账号未抓到内容";
+    document.getElementById("d-sum").textContent = "—";
+    document.getElementById("h24").innerHTML = "";
+    document.getElementById("d-attrs").innerHTML = '<div class="attr-line"><span class="conf lo">无数据</span><span>无公开内容可归因</span></div>';
+    document.getElementById("d-acts").innerHTML = "";
+    return;
+  }
+  var ageH = Math.max(1, Math.round((Date.now() - it.created) / 3600000));
+  var ratio = A.base > 0 ? it.interact / A.base : 1;
+  document.getElementById("d-title").textContent = it.title;
+  document.getElementById("d-sub").textContent =
+    (TYPS[it.type] || it.type) + " · 发布于 " + fmtDateY(it.created) + " · 已发布 " + (ageH > 48 ? Math.round(ageH / 24) + " 天" : ageH + " 小时") + " · " + (A.source === "official" ? "官方 API 模式" : "公开快照模式");
+  var sum = document.getElementById("d-sum");
+  sum.textContent = "+" + fmtN(it.interact);
+  sum.style.color = it.up ? "var(--up)" : "var(--down)";
+
+  var el = document.getElementById("h24");
+  el.innerHTML = "";
+  var track = document.createElement("div"); track.className = "track"; el.appendChild(track);
+  [0, 3, 6, 9, 12, 15, 18, 21, 24].forEach(function (h) {
+    var t = document.createElement("div");
+    t.className = "hour"; t.style.left = (h / 24 * 100) + "%";
+    t.textContent = (h < 10 ? "0" + h : h) + ":00";
+    el.appendChild(t);
+  });
+  var nodes = [
+    { h: 0, cls: "pub", top: false, nm: "发布点", st: "ok 真实" },
+    { h: 10, cls: "node", top: true, nm: "10:00 早班车", st: "est 通用节点" },
+    { h: 14, cls: "node", top: true, nm: "14:00 二次分发", st: "est 通用节点" },
+    { h: 20, cls: "node", top: true, nm: "20:00 晚间高峰", st: "est 通用节点" },
+    { h: 23, cls: "snap", top: false, nm: "当前快照 " + fmtN(it.interact), st: "ok 真实" }
+  ];
+  nodes.forEach(function (n) {
+    var d = document.createElement("div");
+    d.className = "hnode " + n.cls;
+    d.style.left = (n.h / 24 * 100) + "%";
+    d.innerHTML = '<div class="nd"></div><div class="nt ' + (n.top ? "top" : "bot") + '"><div class="nm">' + n.nm + '</div><div class="st ' + n.st.split(" ")[0] + '">' + n.st + '</div></div>';
+    el.appendChild(d);
+  });
+
+  /* M5 归因 */
+  var attrs = "";
+  if (ratio >= 1.5) {
+    attrs = '<div class="attr-line"><span class="conf hi">推荐流命中（推导）</span><span>互动 ' + fmtN(it.interact) + ' = 基线 ' + Math.round(A.base) + ' 的 ' + ratio.toFixed(1) + ' 倍——关注流只给基线量级，超 1.5 倍基本来自推荐流放量</span></div>' +
+      '<div class="attr-line"><span class="conf hi">可信度高</span><span>评论 ' + fmtN(it.comments) + '，评论率 ' + (it.interact ? Math.round(it.comments / it.interact * 100) : 0) + '%——知乎互动权重：赞同>收藏>评论>点击</span></div>';
+  } else if (ratio >= 0.7) {
+    attrs = '<div class="attr-line"><span class="conf mid">关注流常态</span><span>互动 ' + fmtN(it.interact) + ' = 基线的 ' + ratio.toFixed(2) + ' 倍——符合关注流基线量级，未触发推荐流</span></div>';
+  } else {
+    attrs = '<div class="attr-line"><span class="conf hi">低于基线（真实）</span><span>互动 ' + fmtN(it.interact) + '，仅为基线的 ' + ratio.toFixed(2) + ' 倍——低于你自己平均水准</span></div>' +
+      '<div class="attr-line"><span class="conf lo">原因未知</span><span>曝光/点击率数据公开接口不可得——<b>不硬编原因</b>（归因克制是产品价值观）</span></div>';
+  }
+  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需 OAuth（密钥：蒋平），当前为「发布点 + 快照」双点归因</span></div>';
+  document.getElementById("d-attrs").innerHTML = attrs;
+
+  var acts = "";
+  var isRecent = ageH <= 48;
+  acts += isRecent && ratio >= 1.2
+    ? '<div class="abtn rec" onclick="alert(\'M5 处方：本篇超基线 ' + ratio.toFixed(1) + ' 倍，48h 内复制结构发姊妹篇\')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
+    : '<div class="abtn" onclick="alert(\'M3 处方：先补强标题与出处，再考虑新篇\')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
+  acts += '<div class="abtn" onclick="alert(\'M7 处方：置顶高赞评论+结尾加具体问题，重点 20:00-22:00\')"><b>互动</b>置顶回复<div class="why">M7 晚间高峰</div></div>';
+  acts += '<div class="abtn" onclick="alert(\'止损：持续低于基线即转复盘，不追加投入\')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
+  document.getElementById("d-acts").innerHTML = acts;
+}
+
+/* ============ 屏3：方法论校准（①诊断②处方③依据） ============ */
+function renderScreen3() {
+  var pct = A.followersReal ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
+  document.getElementById("g-goal").textContent = "粉丝 " + fmtN(GOAL);
+  document.getElementById("g-who").innerHTML = '账号：<b>' + esc(A.name) + "</b>" + (A.headline ? " · " + esc(short(A.headline, 18)) : "") + (A.followersReal ? " · 粉丝数为接口真实值" : " · 官方用户数据接口不含粉丝数字段（不硬编）");
+  document.getElementById("g-align").innerHTML = pct != null
+    ? '月度卡判定（M1）：目标进度 <b style="color:var(--pri)">' + pct + '%</b>' + (A.snaps.length >= 2 && A.growthPerDay != null ? " · 真实增速 " + (A.growthPerDay >= 0 ? "+" : "") + A.growthPerDay.toFixed(1) + " 粉/日" : " · 逐日增速需快照积累（已存 " + A.snaps.length + " 次）")
+    : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；请用「方式二」公开抓取或看演示数据体验目标对齐分';
+
+  document.getElementById("g-now").innerHTML = (A.followersReal ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
+  document.getElementById("g-tgt").innerHTML = '目标 <b>' + fmtN(GOAL) + '</b> · <span class="tg ' + (A.followersReal ? "ok" : "est") + '">' + (A.followersReal ? "真实" : "受限") + '</span>';
+
+  var note;
+  if (!A.followersReal) {
+    note = A.source === "official"
+      ? '官方用户数据接口（/api/v1/user/contents）不返回粉丝数——<b>不知道就标不知道</b>。内容互动分析不受影响；粉丝口径用「方式二」公开抓取即可获得。'
+      : '粉丝快照受限——内容互动分析不受影响。';
+  } else if (A.snaps.length >= 2 && A.growthPerDay > 0) {
+    var months = ((GOAL - A.followers) / A.growthPerDay / 30).toFixed(1);
+    note = '还差 <b>' + fmtN(Math.max(0, GOAL - A.followers)) + '</b> · 真实增速 ' + A.growthPerDay.toFixed(1) + ' 粉/日，预计 <b>' + months + ' 个月</b>达成。';
+  } else if (A.posts.length >= 2) {
+    note = '还差 <b>' + fmtN(Math.max(0, GOAL - A.followers)) + '</b> · 逐日涨跌知乎不对外提供，需快照积累（当前 ' + A.snaps.length + ' 次——<b>明天再抓一次即出真实增速</b>）。';
+  } else {
+    note = '还差 <b>' + fmtN(Math.max(0, GOAL - A.followers)) + '</b> · 内容样本不足，持续抓取后自动完善。';
+  }
+  document.getElementById("g-note").innerHTML = note;
+
+  /* 方法过滤器 */
+  var mods = {};
+  MATCHED.forEach(function (x) { mods[x.m.module] = true; });
+  var tabs = document.getElementById("kbtabs");
+  var th = '<div class="kbt' + (kbFilter === "all" ? " on" : "") + '" onclick="setKbFilter(\'all\')">全部 ' + MATCHED.length + '</div>';
+  Object.keys(mods).sort().forEach(function (m) {
+    th += '<div class="kbt' + (kbFilter === m ? " on" : "") + '" onclick="setKbFilter(\'' + m + '\')">' + m + ' ' + MATCHED.filter(function (x) { return x.m.module === m; }).length + '</div>';
+  });
+  KB_SHELL.forEach(function (s) {
+    th += '<div class="kbt" style="opacity:.5">' + s.module + ' · 后置</div>';
+  });
+  tabs.innerHTML = th;
+  document.getElementById("kb-count").textContent = "数据信号命中 " + MATCHED.length + " / " + KB.length + " 条方法";
+
+  /* 方法卡 */
+  var list = document.getElementById("mlist2");
+  var h = "";
+  var shown = MATCHED.filter(function (x) { return kbFilter === "all" || x.m.module === kbFilter; });
+  if (!shown.length) {
+    h = '<div class="empty" style="padding:40px"><div class="t">当前过滤条件下没有命中方法</div><div class="d">切换到「全部」查看所有数据信号触发的方法。</div></div>';
+  }
+  shown.forEach(function (x, i) {
+    var m = x.m, c = x.ctx;
+    var cls = i === 0 ? "h1" : i === 1 ? "h2" : "h3";
+    var rankTxt = i === 0 ? "优先级 P0 · 命中分 " + x.score : i === 1 ? "优先级 P1 · 命中分 " + x.score : "优先级 P2 · 命中分 " + x.score;
+    h += '<div class="mcard ' + cls + '">';
+    h += '<div class="rank">' + rankTxt + '</div>';
+    h += '<div class="mhead"><span class="mmod">' + m.module + " " + esc(m.modName) + '</span><span class="mname">' + esc(m.title) + '</span><span class="mtime">适用：' + esc(m.platform) + " · " + esc(m.stage) + '</span></div>';
+    h += '<div class="row3 r1"><div class="no">①</div><div class="body"><div class="h">诊断</div><div class="t">' + m.diag(c, A) + '</div></div></div>';
+    h += '<div class="row3 r2"><div class="no">②</div><div class="body"><div class="h">处方（' + m.rx(c, A).length + ' 个动作）</div><div class="t">' + m.rx(c, A).map(function (r, j) { return (j + 1) + ". " + r; }).join("<br>") + '</div></div></div>';
+    var mdUrl = KB_REPO + "/" + encodeURIComponent(m.module + "-" + (m.id || "").replace(/^M\d+-/, "") + "-" + (m.title || "").replace(/[\\/:*?"<>|]/g, "")) + ".md";
+    h += '<div class="row3 r3"><div class="no">③</div><div class="body"><div class="h">依据（可证伪）</div><div class="t">方法：<a class="kbref" href="' + esc(mdUrl) + '" target="_blank">' + esc(m.id) + ' ' + esc(m.modName) + '/' + esc(m.title) + '</a>（kanshan-kb 仓库）<br>数据信号：<b>' + esc(m.signalDesc) + '</b> · 本次命中分 ' + x.score + '/100<br>知乎实证：' + esc(m.zhihu) + '</div></div></div>';
+    h += '<div class="sigbox">演示子集说明：本页内置方法与 kanshan-kb 仓库 md 格式兼容（type: method / 适用平台 / 适用阶段 / 数据信号），正式版直接读取仓库填充内容（负责人：李俊祎）。</div>';
+    h += '</div>';
+  });
+  list.innerHTML = h;
+}
+
+function setKbFilter(f) { kbFilter = f; renderScreen3(); }
+
+/* ============ 诊断弹窗 ============ */
+var TYPS = { answer: "Answer", article: "Article", pin: "Pin 想法", zvideo: "ZVideo 视频", question: "Question" };
+var TYPL = { answer: "答", article: "文", pin: "想", zvideo: "视", question: "问" };
+var TYPW = { answer: "回答", article: "文章", pin: "想法", zvideo: "视频", question: "问题" };
+function openModal(it) {
+  var official = A && A.source === "official";
+  var live = A && A.source === "live";
+  var real = official || live;
+  var pct = Math.round((it.ratio - 1) * 100);
+  document.getElementById("m-date").textContent = fmtDateY(it.created) + " · " + (TYPS[it.type] || it.type);
+  var titleEl = document.getElementById("m-title");
+  if (it.url) {
+    titleEl.innerHTML = '<a href="' + esc(it.url) + '" target="_blank" style="color:inherit;text-decoration:none">' + esc(it.title) + ' <span style="color:var(--pri);font-size:12px">↗ 原文</span></a>';
+  } else {
+    titleEl.textContent = it.title;
+  }
+  var dt = document.getElementById("m-dtag"), itg = document.getElementById("m-itag");
+  dt.className = "tg " + (real ? "est" : "demo"); dt.textContent = real ? "推导" : "演示";
+  itg.className = "tg " + (real ? "ok" : "demo"); itg.textContent = real ? (official ? "官方" : "真实") : "演示";
+  var d = document.getElementById("m-delta");
+  d.textContent = (pct >= 0 ? "+" + pct : pct) + "%（" + (it.up ? "强于基线" : "弱于基线") + "）";
+  d.className = "v " + (it.up ? "up" : "down");
+  var inter = fmtN(it.interact) + "（赞 " + fmtN(it.voteup);
+  if (official) inter += " · 藏 " + fmtN(it.fav || 0) + " · 评 " + fmtN(it.comments);
+  inter += "）";
+  document.getElementById("m-interact").textContent = inter;
+
+  var diag, adv, basis;
+  if (it.ratio >= 1.5) {
+    diag = "M5 平台算法：互动为基线的 " + it.ratio.toFixed(1) + " 倍，符合推荐流放量特征（关注流只给基线量级）。";
+    adv = "48h 内复制本篇结构发姊妹篇；置顶高赞评论接住二次回访。";
+    basis = "M5_平台算法/知乎三路分发.md · 数据信号：单篇 ≥ 基线×1.5 · 命中分 " + Math.min(100, Math.round(60 + it.ratio * 10)) + "/100";
+  } else if (it.ratio >= 0.7) {
+    diag = "M5 平台算法：互动为基线的 " + it.ratio.toFixed(2) + " 倍，符合关注流常态（未触发推荐流）。";
+    adv = "保持节奏；若想冲推荐流，优化开头 3 行的钩子密度（完读率信号）。";
+    basis = "M5_平台算法/知乎三路分发.md · 数据信号：基线 0.7-1.5 倍区间 · 关注流量级";
+  } else {
+    diag = "M3 选题：互动仅为基线的 " + it.ratio.toFixed(2) + " 倍，低于你的平均水准。具体原因（曝光 or 点击）公开接口不可得，不硬编原因。";
+    adv = "24h 内改疑问式标题+补出处；对照选题带宽；48h 后仍 <50% 即止损转复盘。";
+    basis = "M3_选题/选题矩阵.md · 数据信号：单篇 < 基线×0.7 · 命中分 " + Math.min(100, Math.round(55 + (1 - it.ratio) * 45)) + "/100";
+  }
+  document.getElementById("m-diag").innerHTML = diag;
+  document.getElementById("m-advice").textContent = adv;
+  document.getElementById("m-basis").innerHTML = basis + ' · <a href="' + KB_REPO + '" target="_blank" style="color:var(--pri)">kanshan-kb</a>';
+  document.getElementById("m-note").innerHTML = official
+    ? "数据来源：知乎官方开放平台 API（/api/v1/user/contents，密钥只留本机）。赞/藏/评均为官方接口原值（真实）；「表现%」为与账号自身基线比值（推导）。曝光与小时级数据官方接口不提供——不知道就标不知道。"
+    : live
+    ? "数据来源：知乎公开接口实时抓取。互动数为接口原值（真实）；「表现%」为与账号自身基线比值（推导）。曝光与小时级数据需 OAuth——不知道就标不知道。"
+    : "当前为演示数据（兜底模式）。点首页「授权读取我的创作数据」（官方 API）或方式二可切换为真实数据。";
+  document.getElementById("mask").classList.add("show");
+}
+function closeModal(e) {
+  if (e && e.target !== document.getElementById("mask")) return;
+  document.getElementById("mask").classList.remove("show");
+}
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+
+function animBar() {
+  var f = document.getElementById("pfill");
+  var pct = (A && A.followersReal) ? Math.min(100, Math.round(A.followers / GOAL * 100)) : 0;
+  f.style.width = "0%";
+  requestAnimationFrame(function () { f.style.width = pct + "%"; });
+}
+
+/* ============ 三档切换 ============ */
+var TIER_TXT = { m: "月度卡 · 战略层", w: "周度卡 · 战术层", d: "日度卡 · 执行层" };
+function setTier(t) {
+  document.querySelectorAll(".tbtn").forEach(function (b) { b.classList.toggle("on", b.dataset.tier === t); });
+  document.querySelectorAll(".tview").forEach(function (v) { v.classList.toggle("on", v.id === "tv-" + t); });
+  document.getElementById("tier-tag").textContent = TIER_TXT[t];
+  /* 2026-09-12 蒋平反馈：日度卡也要能进校准卡——原逻辑在有内容时藏按钮属于误伤，三层卡统一保留入口 */
+  document.getElementById("nextbtn").style.display = "";
+}
+
+/* ============ 兜底 ============ */
+var BTXT = {
+  apiError: { icon: "⚠️", text: "公开接口暂时失败，正在展示演示数据（非实时）", retry: true },
+  quota: { icon: "⏳", text: "今日抓取额度已用完，展示缓存数据", retry: false }
+};
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("#dpan button").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === m); });
+  var banner = document.getElementById("banner");
+  var showIds = ["tl-head", "srcbadges", "tiernav", "tv-m", "tv-w", "tv-d", "nextbtn"];
+  var empty = document.getElementById("empty");
+  banner.classList.remove("show");
+  showIds.forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = ""; });
+  document.getElementById("tv-m").classList.add("on");
+  document.getElementById("tv-w").classList.remove("on");
+  document.getElementById("tv-d").classList.remove("on");
+  document.querySelectorAll(".tbtn").forEach(function (b) { b.classList.toggle("on", b.dataset.tier === "m"); });
+  document.getElementById("tier-tag").textContent = TIER_TXT.m;
+  empty.style.display = "none";
+  if (m === "empty") {
+    showIds.forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = "none"; });
+    empty.style.display = "block";
+  } else if (m !== "ok") {
+    var c = BTXT[m];
+    document.getElementById("bicon").textContent = c.icon;
+    document.getElementById("btext").textContent = c.text;
+    document.getElementById("bretry").style.display = c.retry ? "" : "none";
+    banner.classList.add("show");
+  }
+}
+document.querySelectorAll("#dpan button").forEach(function (b) {
+  b.addEventListener("click", function () { setMode(b.dataset.mode); });
+});
+</script>
+<script>
+/* ====== 独立状态块（与主脚本完全隔离：主脚本失败也能运行）====== */
+(function () {
+  var ok = (typeof startOfficial === "function") && (typeof startFetch === "function");
+  var dot = document.getElementById("engstat-dot");
+  var txt = document.getElementById("engstat-txt");
+  var VER = "v5-cli-bridge · 2026-09-10";
+  if (dot) dot.style.background = ok ? "#00b42a" : "#f53f3f";
+  if (txt) {
+    txt.textContent = ok
+      ? "引擎已加载 ✓ " + VER + "（版本号不对 = 旧缓存/旧网页，双击本地 index.html 并 Ctrl+F5）· 正在探测本地网关…"
+      : "主脚本未加载 ✗ " + VER + " —— 按 Ctrl+F5 强制刷新；仍红则把本行文字截图发开发者";
+    txt.style.color = ok ? "var(--down)" : "var(--up)";
+    txt.style.fontWeight = "600";
+  }
+  /* 探测本地网关（官方 API / V4 都经它），把状态写进状态灯 */
+  if (ok && typeof fetch === "function") {
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 3000);
+    fetch("http://localhost:8686/api/status", ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        clearTimeout(timer);
+        if (!txt) return;
+        if (j && j.ok && j.secret && j.cli && j.cli.available) {
+          txt.textContent = "引擎 ✓ " + VER + " · 网关已连 · zhihu-cli 已就绪 ✓ · Access Secret 已配置";
+          txt.style.color = "var(--down)";
+        } else if (j && j.ok) {
+          var cliState = j.cli && j.cli.available ? "zhihu-cli 已就绪" : "zhihu-cli 未安装";
+          txt.textContent = "引擎 ✓ " + VER + " · 网关已连 · " + cliState + " · 方式二会明确展示 CLI 状态，未就绪时走公开数据兜底";
+          txt.style.color = "var(--warn)";
+        }
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        if (txt) {
+          txt.textContent = "引擎 ✓ " + VER + " · 本地网关未启动（双击 frontend 文件夹里的 启动.bat，即可连官方 API / 公开抓取；现在可用演示数据）";
+          txt.style.color = "var(--warn)";
+        }
+      });
+  }
+  /* 按钮兜底：仅当内联 onclick 缺失时才补 addEventListener，避免双触发 */
+  var btn = document.getElementById("authbtn");
+  if (btn && !btn.getAttribute("onclick") && typeof startOfficial === "function") {
+    btn.addEventListener("click", startOfficial);
+  }
+  var pb = document.getElementById("pubbtn");
+  if (pb && !pb.getAttribute("onclick") && typeof startFetch === "function") {
+    pb.addEventListener("click", startFetch);
+  }
+  var dm = document.querySelector('.authsub a[onclick="startDemo()"]');
+  if (dm && !dm.getAttribute("onclick") && typeof startDemo === "function") {
+    dm.addEventListener("click", function (ev) { ev.preventDefault(); startDemo(); });
+  }
+})();
+</script>
+</body>
+</html>
