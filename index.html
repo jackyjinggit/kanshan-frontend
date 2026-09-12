@@ -508,7 +508,7 @@
         <div class="mlist">
           <div class="mrow"><div class="mk">最有效动作 Top3</div><div class="mv" id="m-top3">—</div></div>
           <div class="mrow"><div class="mk">最佳 / 最差</div><div class="mv" id="m-bw">—</div></div>
-          <div class="mrow"><div class="mk">疑似分发通道</div><div class="mv" id="m-route">—</div></div>
+          <div class="mrow"><div class="mk">分发通道<span class="tg est">需曝光数据</span></div><div class="mv" id="m-route">—</div></div>
         </div>
       </div>
     </div>
@@ -539,7 +539,7 @@
       </div>
       <div class="dagrid">
         <div class="dacard">
-          <div class="dt">归因（M5 三路分发判定 + 可信度）</div>
+          <div class="dt">归因（观测差异 + 待验证假设 + 缺失证据）</div>
           <div id="d-attrs"></div>
         </div>
         <div class="dacard">
@@ -647,9 +647,9 @@
  */
 var KB = [
   {
-    id: "M5-01", module: "M5", modName: "平台算法", title: "知乎三路分发 · 推荐流命中",
+    id: "M5-01", module: "M5", modName: "平台算法", title: "单篇互动显著高于基线（渠道未知）",
     platform: "知乎(专项)", stage: "全阶段",
-    signalDesc: "单篇互动 ≥ 基线×1.5，疑似命中推荐流",
+    signalDesc: "单篇互动 ≥ 基线×1.5（观测差异，不含渠道判定）",
     signal: function (A) {
       var it = A.latest;
       if (!it || A.base <= 0) return null;
@@ -657,9 +657,11 @@ var KB = [
       if (ratio < 1.5) return null;
       return { score: Math.min(100, 60 + ratio * 10), ctx: { ratio: ratio } };
     },
-    diag: function (c, A) { return "最新一篇互动为基线的 <b>" + c.ratio.toFixed(1) + " 倍</b>——数据特征符合知乎推荐流分发（关注流只会给基线量级，超基线 1.5 倍以上通常来自推荐流放量）。"; },
-    rx: function (c, A) { return ["48 小时内复制本篇结构发姊妹篇（推荐流命中的选题带宽已被验证）", "置顶本篇评论区高赞观点，接住推荐流二次回访", "把本篇选题关键词沉淀进选题库，标记为「推荐流验证款」"]; },
-    zhihu: "推荐流按互动率（赞同/曝光）在发布后 1-2 小时内决定是否放量；命中后互动可达基线数倍。"
+    /* WEB-04：此前直接断言「符合推荐流分发/关注流只给基线量级」——赞评藏快照里没有任何
+       渠道信息，这是硬编归因。改为只陈述观测差异，渠道候选降级为待验证假设。 */
+    diag: function (c, A) { return "最新一篇互动为基线的 <b>" + c.ratio.toFixed(1) + " 倍</b>——这是<b>观测差异</b>（赞评藏真实快照算得）。<b>差异来源无法确认</b>：当前数据不含曝光量、流量来源与事件流，推荐流放量 / 站外带入 / 问题页搜索长尾 / 关注流基数变化等候选均无法区分。"; },
+    rx: function (c, A) { return ["48 小时内复制本篇结构发姊妹篇（验证选题带宽是否可复现——可复现才算证据）", "置顶本篇评论区高赞观点（与渠道判定无关的通用动作）", "把本篇选题关键词沉淀进选题库，标记为「高互动待验证款」"]; },
+    zhihu: "本卡只做量级比较：单篇互动与账号自身基线的倍数关系。渠道归属需曝光/流量来源数据，公开接口不可得。"
   },
   {
     id: "M3-01", module: "M3", modName: "选题", title: "选题矩阵 · 单篇低于基线",
@@ -674,7 +676,7 @@ var KB = [
     },
     diag: function (c, A) { return "最新一篇互动仅为基线的 <b>" + Math.round(c.ratio * 100) + "%</b>——低于你自己平均水准。注意：具体原因（曝光不足 or 点击率低）公开接口不可得，<b>不硬编原因</b>（归因克制）。"; },
     rx: function (c, A) { return ["24h 内改标题为疑问式并补数据出处（可干预变量优先）", "对照选题矩阵：本篇选题是否在你历史高互动选题带宽内", "若 48h 后仍低于基线 50%，止损转复盘，不追加投入"]; },
-    zhihu: "知乎选题带宽=你历史高互动题目的交集；越贴近带宽，推荐流初始互动率越高。"
+    zhihu: "选题带宽=你历史高互动题目的交集（可由本账号数据算出）。「越贴近带宽初始互动率越高」属<b>假设，待验证</b>——需曝光数据才能检验。"
   },
   {
     id: "M6-01", module: "M6", modName: "发布冷启动", title: "发布时机 · 历史强势日匹配",
@@ -689,7 +691,7 @@ var KB = [
     },
     diag: function (c, A) { return "你的发布数据存在明显强势日：<b>周" + A.WNAMES[A.bestW] + "</b>均值是整体基线的 <b>" + c.lift.toFixed(2) + " 倍</b>（" + A.wk[A.bestW].n + " 篇真实样本）。"; },
     rx: function (c, A) { return ["下周" + A.WNAMES[A.bestW] + "固定为主推发布日", "发布时间叠加晚间高峰 20:00-22:00", "连续验证 3 周后把该时段写进账号 SOP"]; },
-    zhihu: "知乎流量在工作日晚间与周末上午有双峰；但个人强势日由自身粉丝活跃结构决定，以自己的数据为准。"
+    zhihu: "「平台流量工作日晚间与周末上午双峰」属<b>假设，待验证</b>（无官方口径）。本卡真实依据只有一条：你自己各发布日的历史互动均值与样本数。"
   },
   {
     id: "M6-02", module: "M6", modName: "发布冷启动", title: "节奏断更预警",
@@ -703,7 +705,7 @@ var KB = [
     },
     diag: function (c, A) { return "距你最近一次发布已 <b>" + c.days + " 天</b>（月更 4 篇 = 平均 7.5 天/篇），节奏正在偏离目标读者的关注衰减窗口。"; },
     rx: function (c, A) { return ["72 小时内补发 1 篇（优先回答形态：生产成本低于文章）", "用历史最佳篇的结构做模板降低重启成本", "恢复节奏后再谈选项目标，先保频率后保质量"]; },
-    zhihu: "知乎关注流对 2 周以上不更新的账号会显著降低分发权重，重启成本高于维持。"
+    zhihu: "「断更导致关注流降权」属<b>假设，待验证</b>（无官方口径与曝光数据支撑）。本卡实际依据只有一条真实事实：距最近一篇发布的天数。"
   },
   {
     id: "M4-01", module: "M4", modName: "内容生产", title: "标题风格 A/B（疑问式 vs 陈述式）",
@@ -718,7 +720,7 @@ var KB = [
     },
     diag: function (c, A) { return "标题风格存在可量化差异：<b>" + (c.qWins ? "疑问式" : "陈述式") + "</b>均值高出另一风格 <b>" + Math.round(c.diff * 100) + "%</b>（真实互动数据推导）。"; },
     rx: function (c, A) { return [c.qWins ? "新篇标题统一疑问式（How/为什么/怎么办）" : "新篇标题统一陈述式（结论前置）", "同选题做双标题小范围 A/B：一篇回答一篇文章", "把胜出风格写进内容 SOP，异常时再验证"]; },
-    zhihu: "知乎问题页流量天然偏好疑问式（与问题形态同构）；文章流量偏陈述式（搜索流匹配）。"
+    zhihu: "「问题页偏好疑问式标题」属<b>假设，待验证</b>。本卡真实依据只有一条：你自己疑问式与陈述式标题的历史互动均值对比。"
   },
   {
     id: "M4-02", module: "M4", modName: "内容生产", title: "形态选择（回答 vs 文章）",
@@ -731,9 +733,9 @@ var KB = [
       if (diff < 0.3) return null;
       return { score: Math.min(100, 40 + diff * 60), ctx: { diff: diff, ansWins: A.tAvg.answer > A.tAvg.article } };
     },
-    diag: function (c, A) { return "形态效率差可量化：<b>" + (c.ansWins ? "回答" : "文章") + "</b>均值高出另一形态 <b>" + Math.round(c.diff * 100) + "%</b>。回答吃推荐流+搜索流双入口，文章利于长尾沉淀。"; },
+    diag: function (c, A) { return "形态效率差可量化：<b>" + (c.ansWins ? "回答" : "文章") + "</b>均值高出另一形态 <b>" + Math.round(c.diff * 100) + "%</b>（你自己数据算得，真实）。差异<b>成因未知</b>——形态与渠道入口的关系属假设，需曝光数据检验。"; },
     rx: function (c, A) { return [c.ansWins ? "主战场切回答：每周 ≥3 篇，找高关注问题作答" : "主战场切文章：建专栏沉淀系列，标题带搜索关键词", "另一形态降级为引流位（附领域钩子）", "90 天后复检形态差是否收敛"]; },
-    zhihu: "回答挂在问题页下，共享问题的搜索权重与推荐分发；文章是独立 URL，靠标题关键词吃搜索长尾。"
+    zhihu: "回答挂在问题页下、文章是独立 URL——这是<b>平台产品结构事实</b>（可在知乎站内直接观察）。由此带来的搜索/推荐权重差异属<b>假设，待验证</b>。本卡真实依据：你自己两种形态的历史互动均值。"
   },
   {
     id: "M7-01", module: "M7", modName: "粉丝互动", title: "评论率过低 · 互动引导缺失",
@@ -750,7 +752,7 @@ var KB = [
     },
     diag: function (c, A) { return "评论仅占互动总量的 <b>" + (c.rate * 100).toFixed(1) + "%</b>（低于 6% 健康线）——读者在「赞了就走」，没有形成讨论场。"; },
     rx: function (c, A) { return ["每篇结尾加一个可争议的具体问题（不是「你怎么看」）", "发布后 1h 内自己置顶一条补充观点，给评论区定调", "回复前 5 条评论（早期互动率会被算法二次放大）"]; },
-    zhihu: "知乎权重：赞同>收藏>评论>点击，但评论率影响「值得讨论」信号，触发二次推荐。"
+    zhihu: "「互动权重排序赞同>收藏>评论>点击」与「评论率触发二次推荐」均属<b>假设，待验证</b>（无官方权重文档）。本卡真实依据：你自己的评论数与评论占互动比。"
   },
   {
     id: "M1-01", module: "M1", modName: "定位与赛道", title: "风格稳定性收敛",
@@ -763,7 +765,7 @@ var KB = [
     },
     diag: function (c, A) { return "风格稳定性指数 <b>" + c.stab + "/100</b>——互动量在你自己的内容间大起大落，账号尚未形成稳定的内容带宽，读者预期漂移。"; },
     rx: function (c, A) { return ["砍掉互动后 50% 分位以下的选题类型（用真实分布，不凭感觉）", "固定 1 个内容框架连续产出 6 篇再评估", "人设签名/置顶内容与高互动选题对齐"]; },
-    zhihu: "账号标签由历史内容投票聚合；风格漂移会让推荐系统无法归类，分发效率下降。"
+    zhihu: "「账号标签聚合」与「风格漂移降低分发效率」均属<b>假设，待验证</b>（无官方口径；且本指标只是互动离散度，不测主题一致性）。本卡真实依据：你自己互动数列的离散程度。"
   },
   {
     id: "M8-01", module: "M8", modName: "数据复盘", title: "基线复盘 · 快照增速监控",
@@ -781,18 +783,18 @@ var KB = [
     zhihu: "复盘的价值在归因克制：区分「内容差」与「分发差」需要曝光数据（OAuth），先只优化可干预变量。"
   },
   {
-    id: "M5-02", module: "M5", modName: "平台算法", title: "知乎三路分发 · 搜索流沉淀",
+    id: "M5-02", module: "M5", modName: "平台算法", title: "内容结构以文章为主（长尾策略适配）",
     platform: "知乎(专项)", stage: "成熟期",
-    signalDesc: "文章占比高且标题含具体关键词（搜索流友好结构）",
+    signalDesc: "文章占比 ≥50%（内容结构事实，不含渠道判定）",
     signal: function (A) {
       if (!A.posts.length) return null;
       var artRatio = A.posts.filter(function (p) { return p.type === "article"; }).length / A.posts.length;
       if (artRatio < 0.5) return null;
       return { score: 45, ctx: { artRatio: artRatio } };
     },
-    diag: function (c, A) { return "你的内容 <b>" + Math.round(c.artRatio * 100) + "% 为文章</b>——文章是独立 URL，标题关键词直接吃知乎搜索与百度收录的长尾流量。"; },
-    rx: function (c, A) { return ["文章标题植入 1 个具体搜索词（如「宋代 外卖 考据」）", "把高赞回答升级为文章，标题重写为搜索句式", "每周 1 篇「常青题」文章，只服务搜索流不看短期互动"]; },
-    zhihu: "搜索流量是知乎三路中最稳定的一路：无时间衰减，持续数月；问题页权重高于文章页。"
+    diag: function (c, A) { return "你的内容 <b>" + Math.round(c.artRatio * 100) + "% 为文章</b>（真实占比）。文章是独立 URL（平台结构事实）；「由此获得搜索长尾流量」属<b>假设，待验证</b>——本产品无法观测你的搜索来源占比。"; },
+    rx: function (c, A) { return ["文章标题植入 1 个具体搜索词（低成本可干预动作）", "把高赞回答升级为文章，标题重写为搜索句式", "每周 1 篇「常青题」文章，用 30/60 天后的互动增量自行验证长尾假设"]; },
+    zhihu: "「搜索流无时间衰减」「问题页权重高于文章页」均属<b>假设，待验证</b>（需曝光与来源数据才能检验）。本卡真实依据：你自己历史作品的互动分布。"
   },
   {
     id: "M1-02", module: "M1", modName: "定位与赛道", title: "目标对齐分监控",
@@ -1430,15 +1432,15 @@ function renderMonthView() {
   document.getElementById("m-bw").innerHTML =
     '<span class="best">' + esc(short(A.best.title, 16)) + ' +' + fmtN(A.best.interact) + '</span> ｜ <span class="worst">' + esc(short(A.worst.title, 16)) + ' ' + fmtN(A.worst.interact) + '</span>';
 
-  var routeTxt;
-  if (A.latest && A.base > 0 && A.latest.ratio >= 1.5) {
-    routeTxt = '最新篇超基线 ' + A.latest.ratio.toFixed(1) + ' 倍 → <b>疑似推荐流放量</b>（M5）';
-  } else if (A.posts.filter(function (p) { return p.type === "article"; }).length / Math.max(1, A.posts.length) >= 0.5) {
-    routeTxt = '文章占比 ≥50% → <b>偏搜索流长尾结构</b>（M5）';
-  } else {
-    routeTxt = '互动量级接近基线 → <b>以关注流为主</b>（M5）· 推荐流命中判定需曝光数据（OAuth）';
-  }
-  document.getElementById("m-route").innerHTML = routeTxt + ' <span class="tg est">判定为推导</span>';
+  /* WEB-04：此前按互动倍数/文章占比直接判「疑似推荐流放量 / 偏搜索流 / 以关注流为主」，
+     但赞评藏快照里没有任何渠道信息——这是拿结果反推渠道。
+     改为只陈述可算的结构事实，并明示渠道无法判定。 */
+  var artRate = Math.round(A.posts.filter(function (p) { return p.type === "article"; }).length / Math.max(1, A.posts.length) * 100);
+  var routeTxt = '<b>无法判定</b>——当前数据不含曝光量与流量来源，渠道归属不可推断。' +
+    '<br><small style="color:var(--text-3)">可算的结构事实：文章占比 ' + artRate + '%' +
+    (A.latest && A.base > 0 ? ' · 最新篇为基线 ' + A.latest.ratio.toFixed(1) + ' 倍' : '') +
+    ' · 样本 ' + A.posts.length + ' 篇</small>';
+  document.getElementById("m-route").innerHTML = routeTxt + ' <span class="tg est">缺渠道证据</span>';
 }
 
 /* ============ 周度视图 ============ */
@@ -1545,18 +1547,38 @@ function renderDayView() {
     '<div class="s3note">小时级走势需要账号本人 OAuth 的曝光/流量序列，当前只有单次累计快照——' +
       '<b>无小时级数据不画 24 小时走势</b>（缺失 ≠ 零）。</div>';
 
-  /* M5 归因 */
+  /* WEB-04 归因三段式：观测差异（真实数字）+ 待验证假设（候选渠道，标注无证据）+ 缺失证据清单。
+     取消一切确定性渠道归因——只有赞评藏快照时，「已命中/未触发推荐流」这类判定不得输出。
+     命中分（信号强度）与证据可信度分离展示：命中分高只说明差异显著，不代表原因已知。 */
+  var dirTxt = ratio >= 1.5 ? "显著高于" : (ratio >= 0.7 ? "接近" : "低于");
   var attrs = "";
-  if (ratio >= 1.5) {
-    attrs = '<div class="attr-line"><span class="conf hi">推荐流命中（推导）</span><span>互动 ' + fmtN(it.interact) + ' = 基线 ' + Math.round(A.base) + ' 的 ' + ratio.toFixed(1) + ' 倍——关注流只给基线量级，超 1.5 倍基本来自推荐流放量</span></div>' +
-      '<div class="attr-line"><span class="conf hi">可信度高</span><span>评论 ' + fmtN(it.comments) + '，评论率 ' + (it.interact ? Math.round(it.comments / it.interact * 100) : 0) + '%——知乎互动权重：赞同>收藏>评论>点击</span></div>';
-  } else if (ratio >= 0.7) {
-    attrs = '<div class="attr-line"><span class="conf mid">关注流常态</span><span>互动 ' + fmtN(it.interact) + ' = 基线的 ' + ratio.toFixed(2) + ' 倍——符合关注流基线量级，未触发推荐流</span></div>';
-  } else {
-    attrs = '<div class="attr-line"><span class="conf hi">低于基线（真实）</span><span>互动 ' + fmtN(it.interact) + '，仅为基线的 ' + ratio.toFixed(2) + ' 倍——低于你自己平均水准</span></div>' +
-      '<div class="attr-line"><span class="conf lo">原因未知</span><span>曝光/点击率数据公开接口不可得——<b>不硬编原因</b>（归因克制是产品价值观）</span></div>';
-  }
-  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需账号本人 OAuth 授权；当前只有<b>单次累计快照</b>，不构成日内时间序列</span></div>';
+
+  /* ① 观测差异：全部为真实字段算得 */
+  attrs += '<div class="attr-line"><span class="conf hi">观测差异（真实）</span><span>互动合计 <b>' + fmtN(it.interact) +
+    '</b>，为账号基线 ' + Math.round(A.base) + ' 的 <b>' + ratio.toFixed(2) + ' 倍</b>——' + dirTxt + '你自己的平均水准。' +
+    '<small style="color:var(--text-3)">（赞 ' + fmtN(it.voteup) + ' · 评 ' + fmtN(it.comments) +
+    (it.fav != null ? ' · 藏 ' + fmtN(it.fav) : '') + '，均为接口真实字段）</small></span></div>';
+
+  /* ② 待验证假设：列候选渠道，明确标注无渠道证据 */
+  var hyps = ratio >= 1.5
+    ? ["推荐流放量", "站外或私域带入", "问题页搜索长尾累积", "关注流基数本身变化"]
+    : (ratio >= 0.7
+      ? ["关注流常态触达", "推荐流小幅试投后未放量", "选题受众面窄于历史均值"]
+      : ["曝光不足（未进入分发）", "曝光正常但点击率低", "选题偏离历史受众", "发布时段触达少"]);
+  attrs += '<div class="attr-line"><span class="conf mid">待验证假设</span><span>可能原因（<b>无渠道证据，无法确认，未排序</b>）：' +
+    hyps.map(function (h) { return "「" + h + "」"; }).join("、") +
+    '。<small style="color:var(--text-3)">本产品不对无证据的渠道归属排序或断言。</small></span></div>';
+
+  /* ③ 缺失证据清单：缺什么数据导致判不了 */
+  attrs += '<div class="attr-line"><span class="conf lo">缺失证据清单</span><span>判定渠道所需、当前<b>全部缺失</b>的数据：' +
+    '<b>曝光量</b>（缺失）· <b>流量来源构成</b>（缺失）· <b>事件流/小时级序列</b>（缺失）· <b>点击率</b>（缺失）。' +
+    '<small style="color:var(--text-3)">补齐路径：账号本人 OAuth 授权后的创作者数据接口。缺失 ≠ 零。</small></span></div>';
+
+  /* ④ 命中分与证据可信度分离 */
+  var hitScore = Math.min(100, Math.round(60 + ratio * 10));
+  attrs += '<div class="attr-line"><span class="conf lo">命中分 ' + hitScore + '/100 · 证据可信度：低</span><span>' +
+    '命中分只表示<b>差异显著程度</b>（由真实互动数算出）；证据可信度低是因为<b>原因未知</b>——两者互不代表。' +
+    '<small style="color:var(--text-3)">当前只有单次累计快照，不构成日内时间序列。</small></span></div>';
   document.getElementById("d-attrs").innerHTML = attrs;
 
   var acts = "";
@@ -1564,7 +1586,7 @@ function renderDayView() {
   acts += isRecent && ratio >= 1.2
     ? '<div class="abtn rec" onclick="alert(\'M5 处方：本篇超基线 ' + ratio.toFixed(1) + ' 倍，48h 内复制结构发姊妹篇\')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
     : '<div class="abtn" onclick="alert(\'M3 处方：先补强标题与出处，再考虑新篇\')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
-  acts += '<div class="abtn" onclick="alert(\'M7 处方：置顶高赞评论+结尾加具体问题，重点 20:00-22:00\')"><b>互动</b>置顶回复<div class="why">M7 晚间高峰</div></div>';
+  acts += '<div class="abtn" onclick="alert(\'M7 处方：置顶高赞评论+结尾加具体问题（可干预动作；「20-22 点最佳」属待验证假设，请以自己历史数据为准）\')"><b>互动</b>置顶回复<div class="why">M7 可干预动作</div></div>';
   acts += '<div class="abtn" onclick="alert(\'止损：持续低于基线即转复盘，不追加投入\')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
   document.getElementById("d-acts").innerHTML = acts;
 }
@@ -1665,15 +1687,16 @@ function openModal(it) {
 
   var diag, adv, basis;
   if (it.ratio >= 1.5) {
-    diag = "M5 平台算法：互动为基线的 " + it.ratio.toFixed(1) + " 倍，符合推荐流放量特征（关注流只给基线量级）。";
-    adv = "48h 内复制本篇结构发姊妹篇；置顶高赞评论接住二次回访。";
-    basis = "M5_平台算法/知乎三路分发.md · 数据信号：单篇 ≥ 基线×1.5 · 命中分 " + Math.min(100, Math.round(60 + it.ratio * 10)) + "/100";
+    /* WEB-04：不得断言「符合推荐流放量特征」——只报观测差异，渠道列为待验证假设 */
+    diag = "观测差异：互动为基线的 " + it.ratio.toFixed(1) + " 倍（真实字段算得）。<b>差异来源无法确认</b>——待验证假设：推荐流放量 / 站外带入 / 搜索长尾 / 关注流基数变化，<b>无渠道证据</b>。缺失：曝光量、流量来源、事件流。";
+    adv = "48h 内复制本篇结构发姊妹篇（验证可复现性）；置顶高赞评论（与渠道判定无关的通用动作）。";
+    basis = "数据信号：单篇 ≥ 基线×1.5 · 命中分 " + Math.min(100, Math.round(60 + it.ratio * 10)) + "/100（命中分=差异显著度，非原因可信度）";
   } else if (it.ratio >= 0.7) {
-    diag = "M5 平台算法：互动为基线的 " + it.ratio.toFixed(2) + " 倍，符合关注流常态（未触发推荐流）。";
-    adv = "保持节奏；若想冲推荐流，优化开头 3 行的钩子密度（完读率信号）。";
-    basis = "M5_平台算法/知乎三路分发.md · 数据信号：基线 0.7-1.5 倍区间 · 关注流量级";
+    diag = "观测差异：互动为基线的 " + it.ratio.toFixed(2) + " 倍，接近你自己的平均水准。<b>不等于「未触发推荐流」</b>——只有赞评藏快照时无法判定任何渠道。缺失：曝光量、流量来源、事件流。";
+    adv = "保持节奏；可干预变量优先（开头钩子密度、标题信息量），不以渠道猜测为前提。";
+    basis = "数据信号：基线 0.7-1.5 倍区间 · 渠道归属未判定（缺曝光证据）";
   } else {
-    diag = "M3 选题：互动仅为基线的 " + it.ratio.toFixed(2) + " 倍，低于你的平均水准。具体原因（曝光 or 点击）公开接口不可得，不硬编原因。";
+    diag = "观测差异：互动仅为基线的 " + it.ratio.toFixed(2) + " 倍，低于你的平均水准。待验证假设：曝光不足 / 点击率低 / 选题偏离受众，<b>无证据无法区分</b>（不硬编原因）。";
     adv = "24h 内改疑问式标题+补出处；对照选题带宽；48h 后仍 <50% 即止损转复盘。";
     basis = "M3_选题/选题矩阵.md · 数据信号：单篇 < 基线×0.7 · 命中分 " + Math.min(100, Math.round(55 + (1 - it.ratio) * 45)) + "/100";
   }
