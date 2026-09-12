@@ -36,7 +36,7 @@ CAPTURE_PATTERNS = [
 
 def load_cookies(path):
     """浏览器导出的 cookie 数组 → Playwright 格式。
-    坑位（skill 实测）：sameSite 'no_restriction'→'None'；sameSite null→剔除该字段。
+    坑位（实测）：sameSite 'no_restriction'→'None'；sameSite null→剔除该字段。
     """
     raw = json.load(open(path, encoding="utf-8"))
     out = []
@@ -56,7 +56,7 @@ def load_cookies(path):
             item["sameSite"] = "None"
         elif ss in ("strict", "lax"):
             item["sameSite"] = ss.capitalize()
-        # sameSite 为 null/缺失 → 只剔除 sameSite 字段、保留 cookie（skill 坑位3 原意；
+        # sameSite 为 null/缺失 → 只剔除 sameSite 字段、保留 cookie（原意；
         # 2026-09-12 实测：误剔整条会把 z_c0 登录态一起丢掉）
         out.append(item)
     return out
@@ -118,7 +118,7 @@ def main():
             print(f"[i] 滚动 {i + 1}/{args.scroll}")
 
         # 顺带验证登录态 + SSR 兜底：即便接口 403，回答/文章卡片常已服务端渲染进 HTML，
-        # 直接从 DOM 抽（weibo skill 精髓的另一个面：运行时已求值的内容直接拿）
+        # 直接从 DOM 抽（同源经验：运行时已求值的内容直接拿）
         logged = page.evaluate(
             "() => !!document.querySelector('.AppHeader-profile, .ProfileMain-header')"
         )

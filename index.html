@@ -588,7 +588,7 @@
   <footer>
     <b>看山 · 创作校准引擎</b> · 2026 知乎黑客松校园新锐季<br>
     数据接入层（公开接口实时抓取）+ 方法论层（M1-M10 知识库）+ 呈现层（月/周/日三档）<br>
-    方法论正式源：kanshan-kb 仓库（李俊祎填充中）· OAuth 密钥不进前端（官方红线）
+    方法论正式源：kanshan-kb 仓库（持续补充中）· OAuth 授权不进前端（官方红线）
   </footer>
 </div>
 
@@ -1539,7 +1539,7 @@ function renderDayView() {
     attrs = '<div class="attr-line"><span class="conf hi">低于基线（真实）</span><span>互动 ' + fmtN(it.interact) + '，仅为基线的 ' + ratio.toFixed(2) + ' 倍——低于你自己平均水准</span></div>' +
       '<div class="attr-line"><span class="conf lo">原因未知</span><span>曝光/点击率数据公开接口不可得——<b>不硬编原因</b>（归因克制是产品价值观）</span></div>';
   }
-  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需 OAuth（密钥：蒋平），当前为「发布点 + 快照」双点归因</span></div>';
+  attrs += '<div class="attr-line"><span class="conf lo">说明</span><span>小时级流量曲线与曝光量需账号本人 OAuth 授权，当前为「发布点 + 快照」双点归因</span></div>';
   document.getElementById("d-attrs").innerHTML = attrs;
 
   var acts = "";
@@ -1611,7 +1611,7 @@ function renderScreen3() {
     h += '<div class="row3 r2"><div class="no">②</div><div class="body"><div class="h">处方（' + m.rx(c, A).length + ' 个动作）</div><div class="t">' + m.rx(c, A).map(function (r, j) { return (j + 1) + ". " + r; }).join("<br>") + '</div></div></div>';
     var mdUrl = KB_REPO + "/" + encodeURIComponent(m.module + "-" + (m.id || "").replace(/^M\d+-/, "") + "-" + (m.title || "").replace(/[\\/:*?"<>|]/g, "")) + ".md";
     h += '<div class="row3 r3"><div class="no">③</div><div class="body"><div class="h">依据（可证伪）</div><div class="t">方法：<a class="kbref" href="' + esc(mdUrl) + '" target="_blank">' + esc(m.id) + ' ' + esc(m.modName) + '/' + esc(m.title) + '</a>（kanshan-kb 仓库）<br>数据信号：<b>' + esc(m.signalDesc) + '</b> · 本次命中分 ' + x.score + '/100<br>知乎实证：' + esc(m.zhihu) + '</div></div></div>';
-    h += '<div class="sigbox">演示子集说明：本页内置方法与 kanshan-kb 仓库 md 格式兼容（type: method / 适用平台 / 适用阶段 / 数据信号），正式版直接读取仓库填充内容（负责人：李俊祎）。</div>';
+    h += '<div class="sigbox">演示子集说明：本页内置方法与 kanshan-kb 仓库 md 格式兼容（type: method / 适用平台 / 适用阶段 / 数据信号），正式版直接读取仓库内容。</div>';
     h += '</div>';
   });
   list.innerHTML = h;
@@ -1689,7 +1689,7 @@ function setTier(t) {
   document.querySelectorAll(".tbtn").forEach(function (b) { b.classList.toggle("on", b.dataset.tier === t); });
   document.querySelectorAll(".tview").forEach(function (v) { v.classList.toggle("on", v.id === "tv-" + t); });
   document.getElementById("tier-tag").textContent = TIER_TXT[t];
-  /* 2026-09-12 蒋平反馈：日度卡也要能进校准卡——原逻辑在有内容时藏按钮属于误伤，三层卡统一保留入口 */
+  /* 日度卡也需保留校准卡入口——原逻辑在有内容时藏按钮属误伤，三层卡统一保留 */
   document.getElementById("nextbtn").style.display = "";
 }
 
