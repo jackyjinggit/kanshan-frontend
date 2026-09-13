@@ -75,6 +75,17 @@
   /* 首页极简视图切换：主视图只显示主卡；进阶视图只显示进阶卡 */
   .home-hide { display: none !important; }
   a.adv-entry-link:focus-visible { outline: 2px solid var(--pri); border-radius: 4px; }
+  /* 进阶视图：标题压扁一行置顶，抓取表单展开占满下方 */
+  .entry-grid.adv-full { display: block; max-width: none; }
+  .entry-grid.adv-full .cli-entry { min-height: calc(100vh - 330px); display: flex; flex-direction: column; }
+  .entry-grid.adv-full .adv-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .entry-grid.adv-full .adv-head .adv-back { flex: none; }
+  .entry-grid.adv-full .adv-head .entry-eyebrow { margin: 0; font-size: 12px; }
+  .entry-grid.adv-full .entry-title { font-size: 15px; margin-bottom: 12px; }
+  .entry-grid.adv-full .entry-desc { min-height: 0; margin-bottom: 14px; }
+  .entry-grid.adv-full #uid { min-height: 120px; font-size: 16px; padding: 18px; line-height: 1.6; }
+  .entry-grid.adv-full #pubbtn { padding: 18px; font-size: 17px; margin-top: 14px; }
+  .entry-grid.adv-full .adv-spacer { flex: 1; }
   /* WEB-13：键盘焦点可见 */
   .step:focus-visible, .tbtn:focus-visible, .kbt:focus-visible, .tl-node:focus-visible { outline: 3px solid var(--pri); outline-offset: 2px; border-radius: 6px; }
   .screen.current { display: block; animation: fadein .3s; }
@@ -464,13 +475,13 @@
 
       <!-- 进阶：抓取其他账号 -->
       <div class="entry-card cli-entry" id="card-adv">
-        <a class="adv-back" onclick="showHome('main')" style="cursor:pointer;font-size:12px;color:var(--text-3)">← 返回</a>
-        <div class="entry-eyebrow">进阶 · 抓取其他账号</div>
+        <div class="adv-head"><a class="adv-back" onclick="showHome('main')" style="cursor:pointer;font-size:12px;color:var(--text-3)">← 返回</a><span class="entry-eyebrow">进阶 · 抓取其他账号</span></div>
         <div class="entry-title">分析任意公开账号</div>
         <div class="entry-desc">输入对方的知乎 ID 或主页链接，走官方 CLI + 公开接口抓取公开回答与文章（无需对方授权）。</div>
         <label class="field-label" for="uid">对方的知乎 ID 或主页链接</label>
-        <input class="uinput small" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/..." autocomplete="off">
+        <input class="uinput" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/...（支持粘贴完整主页链接）" autocomplete="off">
         <button class="authbtn ghost" id="pubbtn" onclick="startFetch()">抓取该账号 →</button>
+        <div class="adv-spacer"></div>
         <div class="entry-foot" id="cliHint">CLI 可用时走官方搜索；账号列表由公开接口精确补齐。CLI 未安装/未授权时会明确提示并自动走公开数据兜底。</div>
       </div>
     </div>
@@ -2112,6 +2123,8 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
     var hideMain = (view === "adv");
     m.classList.toggle("home-hide", hideMain);
     a.classList.toggle("home-hide", !hideMain);
+    var grid = document.querySelector(".entry-grid");
+    if (grid) grid.classList.toggle("adv-full", hideMain);
     try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
   };
   /* 启动初始化：目标卡 + 复盘闭环（本地持久化） */
