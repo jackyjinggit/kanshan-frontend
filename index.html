@@ -1640,16 +1640,24 @@ function renderMonthView() {
   /* 独立日期轴行：按点位排布日期标签，密集时稀疏化（相邻标签水平间距 < 5.5% 就跳过），彻底避免叠字 */
   var lane = document.createElement("div");
   lane.className = "datelane";
-  var lastLabelX = -100;
+  /* 真实数据下同一天常有多篇：按日期去重，同一天只标一次；
+     终点日期优先——挤不下时用终点替换掉紧邻的前一个标签，而不是叠上去 */
+  var lastLabelX = -100, lastLabelEl = null, lastLabelDay = null;
   pts.forEach(function (it, idx) {
+    var day = fmtDate(it.created);
+    if (day === lastLabelDay) return;
     var x = 3 + (it.created - start) / span * 94;
-    if (x - lastLabelX < 5.5 && idx !== pts.length - 1) return;
-    lastLabelX = x;
+    var isLast = idx === pts.length - 1;
+    if (x - lastLabelX < 5.5) {
+      if (!isLast) return;
+      if (lastLabelEl) lane.removeChild(lastLabelEl);
+    }
     var d = document.createElement("div");
     d.className = "dlab";
     d.style.left = x + "%";
-    d.textContent = fmtDate(it.created);
+    d.textContent = day;
     lane.appendChild(d);
+    lastLabelX = x; lastLabelEl = d; lastLabelDay = day;
   });
   el.appendChild(lane);
 
