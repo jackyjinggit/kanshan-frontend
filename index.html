@@ -72,6 +72,13 @@
   .authbtn.big { width: 100%; font-size: 17px; padding: 14px 28px; margin-top: 4px; }
   .authbtn.ghost { background: var(--panel2, #f2f6fa); color: var(--fg); border: 1px solid var(--border); }
   .authbtn.ghost:hover { border-color: var(--pri); color: var(--pri); }
+  /* 主视图 solo：进阶卡隐藏时主卡居中、间距拉长 */
+  .entry-grid.solo { grid-template-columns: 1fr; max-width: 620px; }
+  .entry-grid.solo .primary-entry { padding: 26px 30px; }
+  .entry-grid.solo .primary-entry .flow-row { gap: 14px; margin: 16px 0 18px; }
+  .entry-grid.solo .primary-entry .authbtn.big { margin: 8px 0 18px; padding: 16px; font-size: 17px; }
+  .entry-grid.solo .primary-entry .goalcard-input { margin-top: 16px; }
+  .entry-grid.solo .primary-entry .entry-desc { min-height: 0; margin-bottom: 16px; }
   /* 首页极简视图切换：主视图只显示主卡；进阶视图只显示进阶卡 */
   .home-hide { display: none !important; }
   a.adv-entry-link:focus-visible { outline: 2px solid var(--pri); border-radius: 4px; }
@@ -104,7 +111,7 @@
   .tg.demo { background: var(--low-soft); color: var(--low); }
   .tg.pri { background: var(--pri-soft); color: var(--pri); }
 
-  .hero { text-align: center; margin-bottom: 36px; padding-top: 30px; position: relative; }
+  .hero { text-align: center; margin-bottom: 30px; padding-top: 6px; position: relative; }
   .hero .mtn-l, .hero .mtn-r { position: absolute; top: -4px; font-size: 20px; letter-spacing: -2px; color: var(--pri); opacity: .5; }
   .hero .mtn-l { left: 1%; }
   .hero .mtn-r { right: 1%; }
@@ -2134,12 +2141,16 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
     m.classList.toggle("home-hide", hideMain);
     a.classList.toggle("home-hide", !hideMain);
     var grid = document.querySelector(".entry-grid");
-    if (grid) grid.classList.toggle("adv-full", hideMain);
+    if (grid) {
+      grid.classList.toggle("adv-full", hideMain);
+      grid.classList.toggle("solo", !hideMain); /* 主视图：主卡居中+拉长间距 */
+    }
     try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
   };
   /* 启动初始化：目标卡 + 复盘闭环（本地持久化） */
   try { loadGoalCard(); } catch (e) { }
   try { showHome(localStorage.getItem("kanshan_homeview") || "main"); } catch (e) { showHome("main"); }
+  try { var _g0 = document.querySelector(".entry-grid"); if (_g0 && !_g0.classList.contains("adv-full")) _g0.classList.add("solo"); } catch (e) { }
   try { loadReview(); fillActionOptions(); renderReview(); } catch (e) { }
   var pb = document.getElementById("pubbtn");
   if (pb && !pb.getAttribute("onclick") && typeof startFetch === "function") {
