@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="icon/kanshan_icon_fox_favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="icon/kanshan_icon_fox_512.png">
+<link rel="apple-touch-icon" href="icon/kanshan_icon_fox_512.png">
 <title>看山 · 创作校准引擎 · 数据接入层 + 方法论层 + 呈现层</title>
 <script>
 /* 【错误守卫·必须最先加载】任何错误立即红条显示在顶部，带完整堆栈 */
@@ -65,7 +68,7 @@
   .banner .retry { margin-left: auto; border: 1px solid var(--warn); color: var(--warn); background: #fff; padding: 4px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
   .banner.warn { background: var(--warn-soft); border: 1px solid #ffd6ad; color: #a65300; }
 
-  .screen { display: none; padding-top: 62px; } /* header 为 sticky，40px 会被挡 */
+  .screen { display: none; padding-top: 18px; } /* WEB-14：原 62px 会在页内状态条下方再叠一个 header 高度，产生大片空白；状态条已提供间隔，这里只留常规间距 */
   /* 首页改版：主卡强调 / 大按钮 / 进阶卡次级按钮 */
   .entry-card.primary-entry { border: 2px solid var(--pri); box-shadow: 0 4px 18px rgba(0,0,0,.06); }
   .entry-card.primary-entry .entry-eyebrow { color: var(--pri); font-weight: 700; }
@@ -232,22 +235,30 @@
   .lgd .d { background: var(--down); }
 
   .tl-scroll { overflow-x: auto; }
-  .tl { position: relative; min-width: 900px; height: 230px; }
-  .tl .axis { position: absolute; left: 0; right: 0; top: 118px; height: 2px; background: var(--border-hi); }
-  .pt { position: absolute; top: 118px; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; text-align: center; }
-  .pt:hover { z-index: 40; }
-  .pt:hover .pv, .pt:hover .ptd { background: #fff; padding: 1px 5px; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,.15); }
-  .pt .pd { width: 15px; height: 15px; border-radius: 50%; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--border-hi); transition: transform .15s; }
+  /* WEB-14 修复「红点/绿点遮住日期、标签叠字」：
+     日期独立成底部轴行（不再挂在点上下），数值/类型标签默认隐藏、hover 才显示，
+     并用 z-index 分层保证文字永远在圆点之上。成熟散点图（tooltip-on-hover）的标准做法。 */
+  .tl { position: relative; min-width: 900px; height: 210px; }
+  .tl .axis { position: absolute; left: 0; right: 0; top: 108px; height: 2px; background: var(--border-hi); z-index: 1; }
+  .pt { position: absolute; top: 108px; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; text-align: center; }
+  .pt:hover { z-index: 60; }
+  .pt .pd { width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; border: 2.5px solid #fff; box-shadow: 0 0 0 1px var(--border-hi); transition: transform .15s; }
   .pt.up .pd { background: var(--up); }
   .pt.down .pd { background: var(--down); }
-  .pt:hover .pd { transform: scale(1.4); }
-  .pt .pv { position: absolute; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; white-space: nowrap; }
-  .pt.up .pv { bottom: 24px; color: var(--up); }
-  .pt.down .pv { top: 24px; color: var(--down); }
-  .pt .ptd { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-3); white-space: nowrap; }
-  .pt.up .ptd { top: 24px; }
-  .pt.down .ptd { bottom: 24px; }
-  .pt .ptyp { position: absolute; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--pri); white-space: nowrap; }
+  .pt:hover .pd { transform: scale(1.5); }
+  /* 数值/类型标签：默认隐藏，避免密集点叠字；hover 单点浮出，带白底卡片，稳压在最上层 */
+  .pt .pv, .pt .ptyp { position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 61; }
+  .pt:hover .pv, .pt:hover .ptyp { opacity: 1; }
+  .pt .pv { font-size: 11px; font-weight: 700; background: #fff; padding: 2px 7px; border-radius: 6px; box-shadow: 0 1px 8px rgba(0,0,0,.18); }
+  .pt.up .pv { bottom: 26px; color: var(--up); }
+  .pt.down .pv { top: 26px; color: var(--down); }
+  .pt .ptyp { font-size: 10px; color: var(--pri); background: var(--pri-soft); padding: 1px 6px; border-radius: 6px; }
+  .pt.up .ptyp { top: 26px; }
+  .pt.down .ptyp { bottom: 26px; }
+  /* 独立日期轴行：贴图底部，按点位排布并对密集日期做稀疏化，文字层级低于点但互不遮挡 */
+  .tl .datelane { position: absolute; left: 0; right: 0; top: 176px; height: 22px; z-index: 2; }
+  .tl .dlab { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--text-3); white-space: nowrap; }
+  .tl .dlab::before { content: ""; position: absolute; left: 50%; top: -66px; transform: translateX(-50%); width: 1px; height: 60px; background: var(--border); opacity: .5; }
 
   .mlist { margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; }
   .mrow { display: flex; gap: 10px; padding: 5px 0; font-size: 12px; }
@@ -433,7 +444,7 @@
   </div>
 </header>
 
-<div class="container">
+<div class="container" style="padding-bottom:0">
   <div id="engstat" style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--border);font-size:12px;color:var(--text-2);">
     <span id="engstat-dot" style="width:9px;height:9px;border-radius:50%;background:#ff7d00;flex-shrink:0;"></span>
     <span id="engstat-txt">引擎状态：检查中（若一直停在这行，说明脚本未加载——按 Ctrl+F5 强制刷新）</span>
@@ -1606,26 +1617,41 @@ function renderMonthView() {
   document.getElementById("tl-range").textContent =
     fmtDateY(start) + " ~ " + fmtDateY(end) + "（全部抓取窗口，跨 " + spanDays + " 天）· " + A.name + " · " + A.posts.length + " 篇公开内容";
 
+  /* WEB-14：数值/类型标签改为 hover 浮出（默认隐藏），日期不再挂在点上，
+     统一收集后渲染成底部独立日期轴行并稀疏化，从根上消除「点遮日期/标签叠字」 */
   pts.forEach(function (it, idx) {
     var x = 3 + (it.created - start) / span * 94;
-    /* 同一天多篇时做确定性横向抖动，避免节点/标签完全重叠点不动 */
-    x = Math.max(1.5, Math.min(97.5, x + (((idx * 37) % 7) - 3) * 0.45));
-    var off = -Math.max(-46, Math.min(46, (it.interact / Math.max(1, A.maxI)) * 46));
+    /* 同一天多篇时加强确定性横向抖动，密集段也能拉开 */
+    x = Math.max(1.5, Math.min(97.5, x + (((idx * 37) % 9) - 4) * 0.85));
+    var off = -Math.max(-42, Math.min(42, (it.interact / Math.max(1, A.maxI)) * 42));
     var pct = Math.round((it.ratio - 1) * 100);
     var p = document.createElement("div");
     p.className = "pt " + (it.up ? "up" : "down");
     p.style.left = x + "%";
     p.style.marginTop = off + "px";
+    p.title = fmtDate(it.created) + " · " + (TYPL[it.type] || "内容") + " · " + (pct >= 0 ? "+" + pct : pct) + "%";
     p.innerHTML =
       '<div class="pv">' + (pct >= 0 ? "+" + pct : pct) + '%</div>' +
       '<div class="pd"></div>' +
-      '<div class="ptd">' + fmtDate(it.created) + '</div>' +
-      '<div class="ptyp" style="top:' + (it.up ? "42px" : "-48px") + '">' + (TYPL[it.type] || "·") + '</div>';
-    var d = p.querySelector(".ptd");
-    if (idx % 2 === 1) { d.style.top = "auto"; d.style.bottom = it.up ? "-28px" : "44px"; }
+      '<div class="ptyp">' + (TYPL[it.type] || "·") + '</div>';
     p.addEventListener("click", function () { openModal(it); });
     el.appendChild(p);
   });
+  /* 独立日期轴行：按点位排布日期标签，密集时稀疏化（相邻标签水平间距 < 5.5% 就跳过），彻底避免叠字 */
+  var lane = document.createElement("div");
+  lane.className = "datelane";
+  var lastLabelX = -100;
+  pts.forEach(function (it, idx) {
+    var x = 3 + (it.created - start) / span * 94;
+    if (x - lastLabelX < 5.5 && idx !== pts.length - 1) return;
+    lastLabelX = x;
+    var d = document.createElement("div");
+    d.className = "dlab";
+    d.style.left = x + "%";
+    d.textContent = fmtDate(it.created);
+    lane.appendChild(d);
+  });
+  el.appendChild(lane);
 
   if (A.followers != null) {
     var goalPct = Math.min(100, Math.round(A.followers / GOAL * 100));
