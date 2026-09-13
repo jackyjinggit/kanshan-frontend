@@ -1977,9 +1977,21 @@ function daysTo(due) {
   return Math.ceil(d / 86400000);
 }
 function openGoalCard() {
-  var d0 = document.querySelector(".goalcard-input");
-  if (d0) { d0.open = true; d0.scrollIntoView({ behavior: "smooth", block: "center" }); }
-  var g0 = document.getElementById("gc-reader"); if (g0) g0.focus();
+  /* 目标卡输入框在第一屏（抓取屏）。若当前不在第一屏，必须先切屏，
+     否则父容器非 current（display:none），scrollIntoView/focus 都无效 —— 表现为「点了没反应」。 */
+  var reveal = function () {
+    var d0 = document.querySelector(".goalcard-input");
+    if (d0) {
+      if ("open" in d0) d0.open = true;
+      d0.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    var g0 = document.getElementById("gc-reader"); if (g0) g0.focus();
+  };
+  var scr1 = document.getElementById("scr1");
+  var onScr1 = scr1 && scr1.classList.contains("current");
+  if (onScr1) { reveal(); return; }
+  try { goStep(1); } catch (e) { }
+  setTimeout(reveal, 320);
 }
 function renderGoalCardBox() {
   var box = document.getElementById("goalcard-box"); if (!box) return;
