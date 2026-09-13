@@ -72,6 +72,9 @@
   .authbtn.big { width: 100%; font-size: 17px; padding: 14px 28px; margin-top: 4px; }
   .authbtn.ghost { background: var(--panel2, #f2f6fa); color: var(--fg); border: 1px solid var(--border); }
   .authbtn.ghost:hover { border-color: var(--pri); color: var(--pri); }
+  /* 首页极简视图切换：主视图只显示主卡；进阶视图只显示进阶卡 */
+  .home-hide { display: none !important; }
+  a.adv-entry-link:focus-visible { outline: 2px solid var(--pri); border-radius: 4px; }
   /* WEB-13：键盘焦点可见 */
   .step:focus-visible, .tbtn:focus-visible, .kbt:focus-visible, .tl-node:focus-visible { outline: 3px solid var(--pri); outline-offset: 2px; border-radius: 6px; }
   .screen.current { display: block; animation: fadein .3s; }
@@ -435,7 +438,7 @@
 
     <div class="entry-grid">
       <!-- 主路径：我的账号（一个大按钮，粉丝自定义与目标卡都在这里） -->
-      <div class="entry-card primary-entry">
+      <div class="entry-card primary-entry" id="card-main">
         <div class="entry-eyebrow">推荐 · 我的账号</div>
         <div class="entry-title">一键读取并生成轨迹</div>
         <div class="entry-desc">走知乎官方开放平台 API，只读取当前授权账号的创作内容；Access Secret 只留本机网关。</div>
@@ -460,7 +463,8 @@
       </div>
 
       <!-- 进阶：抓取其他账号 -->
-      <div class="entry-card cli-entry">
+      <div class="entry-card cli-entry" id="card-adv">
+        <a class="adv-back" onclick="showHome('main')" style="cursor:pointer;font-size:12px;color:var(--text-3)">← 返回</a>
         <div class="entry-eyebrow">进阶 · 抓取其他账号</div>
         <div class="entry-title">分析任意公开账号</div>
         <div class="entry-desc">输入对方的知乎 ID 或主页链接，走官方 CLI + 公开接口抓取公开回答与文章（无需对方授权）。</div>
@@ -473,9 +477,10 @@
     <!-- 共享错误条：主路径 / 进阶路径的输入校验错误都显示在这里 -->
     <div class="ferr" id="ferr"></div>
 
-    <div class="quick-actions">
+    <div class="quick-actions" style="display:flex;align-items:center">
       <button class="secondarybtn" onclick="startDemo()">先看演示数据</button>
       <span>演示数据只用于体验，不代表真实账号</span>
+      <a onclick="showHome('adv')" style="margin-left:auto;cursor:pointer;font-size:13px;color:var(--text-3);border-bottom:1px dashed var(--border)">进阶 · 分析其他账号 →</a>
     </div>
     <div class="flow-note">方法论正式源：<b>kanshan-kb</b>（M1-M10）。每条输出都保留「真实 / 推导 / 估算」标签；不知道的字段不硬编。</div>
   </section>
@@ -2099,8 +2104,19 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
   if (btn && !btn.getAttribute("onclick") && typeof startOfficial === "function") {
     btn.addEventListener("click", startOfficial);
   }
+  /* 首页极简视图切换：main=只看主按钮；adv=只看进阶卡（抓其他账号） */
+  window.showHome = function (view) {
+    var m = document.getElementById("card-main");
+    var a = document.getElementById("card-adv");
+    if (!m || !a) return;
+    var hideMain = (view === "adv");
+    m.classList.toggle("home-hide", hideMain);
+    a.classList.toggle("home-hide", !hideMain);
+    try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
+  };
   /* 启动初始化：目标卡 + 复盘闭环（本地持久化） */
   try { loadGoalCard(); } catch (e) { }
+  try { showHome(localStorage.getItem("kanshan_homeview") || "main"); } catch (e) { showHome("main"); }
   try { loadReview(); fillActionOptions(); renderReview(); } catch (e) { }
   var pb = document.getElementById("pubbtn");
   if (pb && !pb.getAttribute("onclick") && typeof startFetch === "function") {
