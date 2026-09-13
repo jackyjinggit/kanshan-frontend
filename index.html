@@ -65,7 +65,7 @@
   .banner .retry { margin-left: auto; border: 1px solid var(--warn); color: var(--warn); background: #fff; padding: 4px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
   .banner.warn { background: var(--warn-soft); border: 1px solid #ffd6ad; color: #a65300; }
 
-  .screen { display: none; padding-top: 40px; }
+  .screen { display: none; padding-top: 62px; } /* header 为 sticky，40px 会被挡 */
   /* 首页改版：主卡强调 / 大按钮 / 进阶卡次级按钮 */
   .entry-card.primary-entry { border: 2px solid var(--pri); box-shadow: 0 4px 18px rgba(0,0,0,.06); }
   .entry-card.primary-entry .entry-eyebrow { color: var(--pri); font-weight: 700; }
@@ -601,6 +601,7 @@
         <div class="dacard">
           <div class="dt">下一步（当下决策）</div>
           <div class="actbtns" id="d-acts"></div>
+          <div id="d-adv" style="display:none;margin-top:12px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--panel2,#f7f9fb);font-size:13px;line-height:1.8"></div>
         </div>
       </div>
       <div style="margin-top:14px;font-size:12px;color:var(--text-3);text-align:center">
@@ -679,7 +680,7 @@
     <div class="mgrid">
       <div class="mcell2"><div class="k">表现（相对基线）<span class="tg" id="m-dtag"></span></div><div class="v" id="m-delta"></div></div>
       <div class="mcell2"><div class="k">互动数（赞+评+藏）<span class="tg" id="m-itag"></span></div><div class="v" id="m-interact"></div></div>
-      <div class="mcell2 full"><div class="k">① 诊断（对齐 M? 模块）</div><div class="v txt" id="m-diag"></div></div>
+      <div class="mcell2 full"><div class="k">① 诊断（对齐方法模块）</div><div class="v txt" id="m-diag"></div></div>
       <div class="mcell2 full"><div class="k">② 处方（下一步动作）</div><div class="v adv" id="m-advice"></div></div>
       <div class="mcell2 full"><div class="k">③ 依据（方法 + 数据信号）</div><div class="v txt" id="m-basis"></div></div>
     </div>
@@ -1510,6 +1511,22 @@ function renderAll() {
   renderScreen3();
 }
 
+/* 反馈：日卡动作按钮的行内建议（不再用 alert 弹窗；人话，不用模块黑话） */
+var DAY_ACTIONS = {
+  chase: function (r) { return { h: "追加建议 · 内容生产", b: "本篇互动为基线的 <b>" + r + " 倍</b>——48 小时内<b>复制本篇结构发一篇姊妹篇</b>：验证选题带宽是否可复现（可复现才算证据，不可复现=运气，不追）。" }; },
+  polish: function (r) { return { h: "补强建议 · 内容生产", b: "本篇互动为基线的 <b>" + r + " 倍</b>——先补强<b>标题与开头</b>（疑问式/数字锚点/具体场景），再考虑发新篇；不追加投入。" }; },
+  interact: function () { return { h: "互动建议 · 粉丝互动", b: "<b>置顶本篇评论区的高赞观点</b> + 结尾补一个具体问题（可干预动作）。「晚间 20-22 点最佳」属待验证假设——以你自己的历史数据为准。" }; },
+  stop: function (r) { return { h: "止损建议 · 数据复盘", b: "持续低于基线（当前 " + r + " 倍）即<b>转入复盘</b>：对照「最佳 / 最差」找差异变量（标题/形态/题材），先想清楚再发下一篇，不追加投入。" }; }
+};
+function showDayAction(kind, ratio) {
+  var box = document.getElementById("d-adv"); if (!box) return;
+  var d0 = DAY_ACTIONS[kind](ratio);
+  box.innerHTML = '<b>' + d0.h + '</b><br>' + d0.b +
+    '<br><small style="color:var(--text-3)">完整处方与「加入复盘」在下方「生成校准动作卡」页。</small>';
+  box.style.display = "block";
+  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+window.showDayAction = showDayAction;
 /* 证据条：来源 · 采集时间 · 窗口 · 样本量 · 缺失（各卡共用同一口径，避免「顶层演示/细节真实」不一致） */
 function evBadge() {
   if (!A) return "";
@@ -1690,14 +1707,17 @@ function renderWeekView() {
     : (A.contentBlocked ? '本周无数据（内容接口受限，无法判读发布情况）' : "本周暂无发布");
   /* WEB-06：单篇样本不足以支撑「最强日」，门槛 n>=2 且明示样本数 */
   document.getElementById("w-strong").innerHTML = (A.bestW >= 0 && A.wk[A.bestW] && A.wk[A.bestW].n >= 2)
-    ? "<b>" + WNAMES[A.bestW] + "</b>（历史均 " + Math.round(A.bestWv) + " 互动/篇，" + A.wk[A.bestW].n + ' 篇样本 <span class="tg ok">真实</span> · M6 依据）'
+    ? "<b>" + WNAMES[A.bestW] + "</b>（历史均 " + Math.round(A.bestWv) + " 互动/篇，" + A.wk[A.bestW].n + ' 篇样本 <span class="tg ok">真实</span> · 发布时机模块依据）'
     : (A.bestW >= 0 && A.wk[A.bestW]
         ? "样本不足：最多的一天仅 <b>" + A.wk[A.bestW].n + " 篇</b>，不足以判「最强日」（≥2 篇，建议 ≥3 篇）"
         : "样本不足（≥2 篇后可判）");
-  var tArr = weekPosts.map(function (p) { return TYPW[p.type] || p.type; });
-  var typeTxt = tArr.length ? "本周发布 " + tArr.length + " 篇：" + esc(tArr.join("、")) : (A.contentBlocked ? "本周无数据（内容接口受限）" : "本周无发布");
+  var tCount = {}, tTotal = 0;
+  weekPosts.forEach(function (p) { var n = TYPW[p.type] || p.type; tCount[n] = (tCount[n] || 0) + 1; tTotal += 1; });
+  var typeSummary = Object.keys(tCount).sort(function (a, b) { return tCount[b] - tCount[a]; })
+    .map(function (k) { return k + " " + tCount[k]; }).join(" · ");
+  var typeTxt = tTotal ? "本周发布 <b>" + tTotal + "</b> 篇：" + esc(typeSummary) : (A.contentBlocked ? "本周无数据（内容接口受限）" : "本周无发布");
   var bestT = (A.tAvg.answer != null && A.tAvg.article != null) ? (A.tAvg.answer >= A.tAvg.article ? "回答" : "文章") : (A.tAvg.answer != null ? "回答" : A.tAvg.article != null ? "文章" : null);
-  if (bestT) typeTxt += "；历史最有效：<b>" + bestT + "</b>（M4 依据）";
+  if (bestT) typeTxt += "；历史最有效：<b>" + bestT + "</b>（内容生产模块依据）";
   document.getElementById("w-type").innerHTML = typeTxt;
   /* WEB-06：处方层同样加门槛——样本 < 2 不得「安排主推」 */
   document.getElementById("w-plan").innerHTML = (A.bestW >= 0 && A.wk[A.bestW] && A.wk[A.bestW].n >= 2)
@@ -1783,10 +1803,10 @@ function renderDayView() {
   var acts = "";
   var isRecent = ageH <= 48;
   acts += isRecent && ratio >= 1.2
-    ? '<div class="abtn rec" onclick="alert(\'M5 处方：本篇超基线 ' + ratio.toFixed(1) + ' 倍，48h 内复制结构发姊妹篇\')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
-    : '<div class="abtn" onclick="alert(\'M3 处方：先补强标题与出处，再考虑新篇\')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
-  acts += '<div class="abtn" onclick="alert(\'M7 处方：置顶高赞评论+结尾加具体问题（可干预动作；「20-22 点最佳」属待验证假设，请以自己历史数据为准）\')"><b>互动</b>置顶回复<div class="why">M7 可干预动作</div></div>';
-  acts += '<div class="abtn" onclick="alert(\'止损：持续低于基线即转复盘，不追加投入\')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
+    ? '<div class="abtn rec" onclick="showDayAction(\'chase\',' + ratio.toFixed(1) + ')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
+    : '<div class="abtn" onclick="showDayAction(\'polish\',' + ratio.toFixed(2) + ')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
+  acts += '<div class="abtn" onclick="showDayAction(\'interact\',0)"><b>互动</b>置顶回复<div class="why">可干预动作</div></div>';
+  acts += '<div class="abtn" onclick="showDayAction(\'stop\',' + ratio.toFixed(2) + ')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
   document.getElementById("d-acts").innerHTML = acts;
 }
 
@@ -1827,15 +1847,15 @@ function renderScreen3() {
   document.getElementById("g-note").innerHTML = note;
 
   /* 方法过滤器 */
-  var mods = {};
-  MATCHED.forEach(function (x) { mods[x.m.module] = true; });
+  var mods = {}, MN = {};
+  MATCHED.forEach(function (x) { mods[x.m.module] = true; MN[x.m.module] = x.m.modName; });
   var tabs = document.getElementById("kbtabs");
   var th = '<div class="kbt' + (kbFilter === "all" ? " on" : "") + '" role="button" tabindex="0" aria-label="筛选：全部方法" onclick="setKbFilter(\'all\')" onkeydown="kbKey(event, \'all\')">全部 ' + MATCHED.length + '</div>';
   Object.keys(mods).sort().forEach(function (m) {
-    th += '<div class="kbt' + (kbFilter === m ? " on" : "") + '" role="button" tabindex="0" aria-label="筛选：' + m + ' 模块" onclick="setKbFilter(\'' + m + '\')" onkeydown="kbKey(event, \'' + m + '\')">' + m + ' ' + MATCHED.filter(function (x) { return x.m.module === m; }).length + '</div>';
+    th += '<div class="kbt' + (kbFilter === m ? " on" : "") + '" role="button" tabindex="0" aria-label="筛选：' + esc(MN[m] || m) + '建议" onclick="setKbFilter(\'' + m + '\')" onkeydown="kbKey(event, \'' + m + '\')">' + esc(MN[m] || m) + ' ' + MATCHED.filter(function (x) { return x.m.module === m; }).length + '</div>';
   });
   KB_SHELL.forEach(function (s) {
-    th += '<div class="kbt" style="opacity:.5">' + s.module + ' · 后置</div>';
+    th += '<div class="kbt" style="opacity:.5">' + (s.modName || s.module) + ' · 更多</div>';
   });
   tabs.innerHTML = th;
   document.getElementById("kb-count").textContent = "数据信号命中 " + MATCHED.length + " / " + KB.length + " 条内置信号";
@@ -1908,15 +1928,21 @@ function daysTo(due) {
   var d = new Date(due + "T23:59:59").getTime() - Date.now();
   return Math.ceil(d / 86400000);
 }
+function openGoalCard() {
+  var d0 = document.querySelector(".goalcard-input");
+  if (d0) { d0.open = true; d0.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  var g0 = document.getElementById("gc-reader"); if (g0) g0.focus();
+}
 function renderGoalCardBox() {
   var box = document.getElementById("goalcard-box"); if (!box) return;
+  var setLink = '<a class="gc-set" onclick="openGoalCard()" style="cursor:pointer;color:var(--pri);font-size:12px;margin-left:6px">去设置 →</a>';
   var g = function (v) { return v ? esc(v) : '<span class="tg est">未设</span>'; };
   var dl = daysTo(GOALCARD.due);
   box.innerHTML =
-    '<div class="mrow"><div class="mk">目标读者</div><div class="mv">' + g(GOALCARD.reader) + '</div></div>' +
-    '<div class="mrow"><div class="mk">专业定位</div><div class="mv">' + g(GOALCARD.position) + '</div></div>' +
-    '<div class="mrow"><div class="mk">时间预算</div><div class="mv">' + (GOALCARD.budget ? esc(GOALCARD.budget) + ' 篇/周' : '<span class="tg est">未设</span>') + '</div></div>' +
-    '<div class="mrow"><div class="mk">截止日期</div><div class="mv">' + (GOALCARD.due ? esc(GOALCARD.due) + (dl != null ? '（剩 <b>' + dl + '</b> 天）' : '') : '<span class="tg est">未设</span>') + '</div></div>';
+    '<div class="mrow"><div class="mk">目标读者</div><div class="mv">' + g(GOALCARD.reader) + (GOALCARD.reader ? "" : setLink) + '</div></div>' +
+    '<div class="mrow"><div class="mk">专业定位</div><div class="mv">' + g(GOALCARD.position) + (GOALCARD.position ? "" : setLink) + '</div></div>' +
+    '<div class="mrow"><div class="mk">时间预算</div><div class="mv">' + (GOALCARD.budget ? esc(GOALCARD.budget) + ' 篇/周' : '<span class="tg est">未设</span>' + setLink) + '</div></div>' +
+    '<div class="mrow"><div class="mk">截止日期</div><div class="mv">' + (GOALCARD.due ? esc(GOALCARD.due) + (dl != null ? '（剩 <b>' + dl + '</b> 天）' : '') : '<span class="tg est">未设</span>' + setLink) + '</div></div>';
 }
 
 /* ============ 复盘闭环（报告第 9 页：选动作→记改动与预期→到期补数判继续/停止）============ */
