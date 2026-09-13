@@ -874,7 +874,7 @@ var KB = [
     platform: "知乎", stage: "全阶段",
     signalDesc: "粉丝进度 < 50% 且距 6 个月窗口过半（常驻兜底）",
     signal: function (A) {
-      if (A.followersKind !== "api" && A.followersKind !== "pub" && A.followersKind !== "user") return null; /* 无粉丝口径时不硬编（归因克制） */
+      if (A.followersKind !== "api" && A.followersKind !== "oauth" && A.followersKind !== "pub" && A.followersKind !== "user") return null; /* 无粉丝口径时不硬编（归因克制） */
       var pct = A.followers / GOAL;
       if (pct >= 0.5) return null;
       return { score: 30, ctx: { pct: pct } };
@@ -1554,6 +1554,7 @@ function renderSrcBadges() {
      h += '<span class="tg ok">知乎公开账号数据 · ' + t + '</span>';
      h += '<span class="tg ok">账号：' + esc(A.name) + '</span>';
     if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
+    else if (A.followersKind === "oauth") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（授权数据）</span>';
     else if (A.followersKind === "pub") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（公开数据）</span>';
     else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
     else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
@@ -1570,6 +1571,7 @@ function renderSrcBadges() {
     h += '<span class="tg demo">演示数据（非真实）· 手动体验</span>';
     /* 粉丝口径徽标：demo 分支同样要显示（WEB-08：来源与可得性各卡一致，不能只在详情里出现） */
     if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
+    else if (A.followersKind === "oauth") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（授权数据）</span>';
     else if (A.followersKind === "pub") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（公开数据）</span>';
     else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
     else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
@@ -1828,6 +1830,7 @@ function renderScreen3() {
     ? '粉丝 <b style="color:var(--pri)">' + fmtN(A.followers) + '</b>'
     : '粉丝 — <span class="tg est">缺失（不硬编）</span>';
   var fTxt = A.followersKind === "api" ? " · 粉丝数为接口真实值"
+           : A.followersKind === "oauth" ? " · 粉丝数来自你的授权账号数据"
            : A.followersKind === "pub" ? " · 粉丝数来自公开主页数据"
            : A.followersKind === "user" ? " · 粉丝数为你填写的自定义值（非平台数据）"
            : A.followersKind === "demo" ? " · 粉丝数为合成演示值（非真实）"
@@ -1838,7 +1841,7 @@ function renderScreen3() {
     : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；可在首页填「我的粉丝数」（自定义口径）或用「方式二」公开抓取。';
 
   document.getElementById("g-now").innerHTML = (A.followers != null ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
-  var fTgMap = { api: ["ok", "真实"], pub: ["ok", "公开数据"], user: ["est", "自定义"], demo: ["est", "合成"] };
+  var fTgMap = { api: ["ok", "真实"], oauth: ["ok", "授权数据"], pub: ["ok", "公开数据"], user: ["est", "自定义"], demo: ["est", "合成"] };
   var fTg = fTgMap[A.followersKind] || ["est", "缺失"];
   document.getElementById("g-tgt").innerHTML = '目标 <b>' + fmtN(GOAL) + '</b> · <span class="tg ' + fTg[0] + '">' + fTg[1] + '</span>';
 
@@ -2185,28 +2188,37 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
     }
     try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
   };
+  var SEALOS = "https://tejnfqbdvadx.cloud.sealos.io";
   async function startOauth() {
     var ferr = document.getElementById("ferr");
     if (ferr) ferr.classList.remove("show");
-    try {
-      var r0 = await fetch("/api/oauth/status");
-      var st = await r0.json();
-      if (st.authorized) {
-        var nm = st.profile && st.profile.name ? st.profile.name : "知乎账号";
-        if (ferr) { ferr.innerHTML = "已授权：<b>" + esc(nm) + "</b>——可再次点击切换账号或重新授权。"; ferr.classList.add("show"); }
-        return;
+    var w = window.open(SEALOS + "/api/oauth/start", "kanshan_oauth");
+    var ferrEl = ferr;
+    var tries = 0;
+    var t = setInterval(async function () {
+      tries++;
+      try {
+        var r = await fetch(SEALOS + "/api/kanshan/contents?limit=50", { credentials: "include" });
+        var j = await r.json();
+        if (j && j.ok && j.items && j.items.length) {
+          clearInterval(t);
+          try { if (w) w.close(); } catch (e) { }
+          A = buildAnalysis("official", "me", null, j.items, null, []);
+          A.followersKind = "oauth";
+          if (j.profile && j.profile.name && !A.name) A.name = j.profile.name;
+          matchKB();
+          unlocked = 2;
+          goStep(2);
+          renderAll();
+          if (ferrEl) ferrEl.classList.remove("show");
+          return;
+        }
+      } catch (e) { /* Sealos 未就绪时静默重试 */ }
+      if (tries > 90) {
+        clearInterval(t);
+        if (ferrEl) { ferrEl.innerHTML = "授权等待超时（约 3 分钟）——请重新点击登录按钮。"; ferrEl.classList.add("show"); }
       }
-      if (!st.configured) {
-        if (ferr) { ferr.innerHTML = "OAuth 凭证未配置：oauth.credentials.local 缺失或字段不全（本机网关侧问题）。"; ferr.classList.add("show"); }
-        return;
-      }
-      var r = await fetch("/api/oauth/url");
-      var j = await r.json();
-      if (!j.ok) { if (ferr) { ferr.innerHTML = esc(j.error || "暂无法发起授权"); ferr.classList.add("show"); } return; }
-      window.location.href = j.url;
-    } catch (e) {
-      if (ferr) { ferr.innerHTML = "本地网关未启动：请先双击 启动.bat（演示数据不受影响）。"; ferr.classList.add("show"); }
-    }
+    }, 2000);
   }
   window.startOauth = startOauth;
   /* 粉丝自动补：官方接口不含粉丝字段——用本机存的知乎 ID 走公开主页补（口径「公开数据」） */
