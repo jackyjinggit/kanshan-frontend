@@ -65,39 +65,7 @@
   .banner .retry { margin-left: auto; border: 1px solid var(--warn); color: var(--warn); background: #fff; padding: 4px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
   .banner.warn { background: var(--warn-soft); border: 1px solid #ffd6ad; color: #a65300; }
 
-  .screen { display: none; padding-top: 62px; } /* header 为 sticky，40px 会被挡 */
-  /* 首页改版：主卡强调 / 大按钮 / 进阶卡次级按钮 */
-  .entry-card.primary-entry { border: 2px solid var(--pri); box-shadow: 0 4px 18px rgba(0,0,0,.06); }
-  .entry-card.primary-entry .entry-eyebrow { color: var(--pri); font-weight: 700; }
-  .authbtn.big { width: 100%; font-size: 17px; padding: 14px 28px; margin-top: 4px; }
-  .authbtn.ghost { background: var(--panel2, #f2f6fa); color: var(--fg); border: 1px solid var(--border); }
-  .authbtn.ghost:hover { border-color: var(--pri); color: var(--pri); }
-  /* 主视图 solo：进阶卡隐藏时主卡居中、间距拉长 */
-  .entry-grid.solo { grid-template-columns: 1fr; max-width: 620px; }
-  .entry-grid.solo .primary-entry { padding: 26px 30px; }
-  .entry-grid.solo .primary-entry .flow-row { gap: 14px; margin: 16px 0 18px; }
-  .entry-grid.solo .primary-entry .authbtn.big { margin: 8px 0 18px; padding: 16px; font-size: 17px; }
-  .entry-grid.solo .primary-entry .goalcard-input { margin-top: 16px; }
-  .entry-grid.solo .primary-entry .entry-desc { min-height: 0; margin-bottom: 16px; }
-  /* 首页极简视图切换：主视图只显示主卡；进阶视图只显示进阶卡 */
-  .home-hide { display: none !important; }
-  a.adv-entry-link:focus-visible { outline: 2px solid var(--pri); border-radius: 4px; }
-  .adv-entry-row { text-align: right; margin: 12px 2px 0; }
-  .adv-entry-row a { cursor: pointer; color: var(--text-2); font-size: 13px; border-bottom: 1px dashed var(--border-hi); padding-bottom: 2px; }
-  .adv-entry-row a:hover { color: var(--pri); border-color: var(--pri); }
-  /* 进阶视图：标题压扁一行置顶，抓取表单展开占满下方 */
-  .entry-grid.adv-full { display: block; max-width: none; }
-  .entry-grid.adv-full .cli-entry { min-height: calc(100vh - 330px); display: flex; flex-direction: column; }
-  .entry-grid.adv-full .adv-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-  .entry-grid.adv-full .adv-head .adv-back { flex: none; }
-  .entry-grid.adv-full .adv-head .entry-eyebrow { margin: 0; font-size: 12px; }
-  .entry-grid.adv-full .entry-title { font-size: 15px; margin-bottom: 12px; }
-  .entry-grid.adv-full .entry-desc { min-height: 0; margin-bottom: 14px; }
-  .entry-grid.adv-full #uid { min-height: 120px; font-size: 16px; padding: 18px; line-height: 1.6; }
-  .entry-grid.adv-full #pubbtn { padding: 18px; font-size: 17px; margin-top: 14px; }
-  .entry-grid.adv-full .adv-spacer { flex: 1; }
-  /* WEB-13：键盘焦点可见 */
-  .step:focus-visible, .tbtn:focus-visible, .kbt:focus-visible, .tl-node:focus-visible { outline: 3px solid var(--pri); outline-offset: 2px; border-radius: 6px; }
+  .screen { display: none; padding-top: 40px; }
   .screen.current { display: block; animation: fadein .3s; }
   @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
   .scr-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
@@ -111,12 +79,10 @@
   .tg.demo { background: var(--low-soft); color: var(--low); }
   .tg.pri { background: var(--pri-soft); color: var(--pri); }
 
-  .hero { text-align: center; margin-bottom: 30px; padding-top: 6px; position: relative; }
-  .hero .mtn-l, .hero .mtn-r { position: absolute; top: -4px; font-size: 20px; letter-spacing: -2px; color: var(--pri); opacity: .5; }
-  .hero .mtn-l { left: 1%; }
-  .hero .mtn-r { right: 1%; }
+  .hero { text-align: center; margin-bottom: 26px; }
+  .hero .mtn { font-size: 30px; letter-spacing: -5px; color: var(--pri); }
   .hero-kicker { color: var(--pri); font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-top: 9px; }
-  .hero h1 { font-size: 25px; font-weight: 800; margin: 12px 0 14px; }
+  .hero h1 { font-size: 25px; font-weight: 800; margin: 6px 0 8px; }
   .hero p { color: var(--text-2); font-size: 14px; line-height: 1.7; }
   .hero p b { color: var(--pri); }
 
@@ -232,11 +198,9 @@
   .lgd .d { background: var(--down); }
 
   .tl-scroll { overflow-x: auto; }
-  .tl { position: relative; min-width: 900px; height: 230px; }
-  .tl .axis { position: absolute; left: 0; right: 0; top: 118px; height: 2px; background: var(--border-hi); }
-  .pt { position: absolute; top: 118px; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; text-align: center; }
-  .pt:hover { z-index: 40; }
-  .pt:hover .pv, .pt:hover .ptd { background: #fff; padding: 1px 5px; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,.15); }
+  .tl { position: relative; min-width: 900px; height: 190px; }
+  .tl .axis { position: absolute; left: 0; right: 0; top: 78px; height: 2px; background: var(--border-hi); }
+  .pt { position: absolute; top: 78px; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; text-align: center; }
   .pt .pd { width: 15px; height: 15px; border-radius: 50%; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--border-hi); transition: transform .15s; }
   .pt.up .pd { background: var(--up); }
   .pt.down .pd { background: var(--down); }
@@ -426,9 +390,9 @@
       <div class="name">看山 · 创作校准引擎<small>诊断 → 处方 → 依据 · 方法论驱动</small></div>
     </div>
     <div class="steps" id="steps">
-      <div class="step active" data-step="1" role="button" tabindex="0" aria-label="第一步：抓取" onkeydown="stepKey(event, 1)"><span class="dot">1</span>抓取</div>
-      <div class="step disabled" data-step="2" role="button" tabindex="0" aria-label="第二步：轨迹" onkeydown="stepKey(event, 2)"><span class="dot">2</span>轨迹</div>
-      <div class="step disabled" data-step="3" role="button" tabindex="0" aria-label="第三步：校准" onkeydown="stepKey(event, 3)"><span class="dot">3</span>校准</div>
+      <div class="step active" data-step="1"><span class="dot">1</span>抓取</div>
+      <div class="step disabled" data-step="2"><span class="dot">2</span>轨迹</div>
+      <div class="step disabled" data-step="3"><span class="dot">3</span>校准</div>
     </div>
   </div>
 </header>
@@ -450,7 +414,7 @@
   <!-- ============ 屏1：最短进入路径 ============ -->
   <section class="screen current" id="scr1">
     <div class="hero">
-      <span class="mtn-l">▲▲▲</span><span class="mtn-r">▲▲▲</span>
+      <div class="mtn">▲ ▲ ▲</div>
       <div class="hero-kicker">知乎创作者 · 数据校准</div>
       <h1>先看清轨迹，再决定下一步</h1>
       <p>抓取公开内容 → 本地计算基线 → 输出<b>诊断 + 处方 + 依据</b><br>失败不会白屏，错误会留在页面上，随时可以回到输入。</p>
@@ -462,50 +426,29 @@
     </div>
 
     <div class="entry-grid">
-      <!-- 主路径：我的账号（一个大按钮，粉丝自定义与目标卡都在这里） -->
-      <div class="entry-card primary-entry" id="card-main">
-        <div class="entry-eyebrow">推荐 · 我的账号</div>
-        <div class="entry-title">一键读取并生成轨迹</div>
-        <div class="entry-desc">走知乎官方开放平台 API，只读取当前授权账号的创作内容；Access Secret 只留本机网关。</div>
-        <div class="flow-row">
-          <input class="uinput small" id="umyid" placeholder="你的知乎 ID（选填，自动补粉丝数）" title="填一次存本地：官方路径完成时自动从公开主页补粉丝数（口径标「公开数据」），不用手填">
-          <input class="uinput small" id="ufans" placeholder="粉丝数（选填·手动覆盖）" inputmode="numeric" title="一般不用填——上面的 ID 会自动补；这里填了则以你填的为准（口径「自定义」）">
-          <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
-        </div>
-        <button class="authbtn big" id="authbtn" onclick="startOfficial()">开始分析我的账号 →</button>
-        <button class="secondarybtn" id="oauthbtn" onclick="startOauth()" style="width:100%;margin-top:10px" title="跳转知乎官方授权页，只读你的创作数据；token 只留本机内存">用知乎账号登录（官方授权 · 只读）</button>
-        <!-- 目标卡（报告第 9 页要求）：目标对齐分需要「明确目标读者、专业定位、时间预算和截止日期」才有锚点 -->
-        <details class="goalcard-input" style="margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--panel2,#f7f9fb)">
-          <summary style="cursor:pointer;font-weight:700;font-size:13px">目标卡（可选，填了目标对齐分才有锚点）▾</summary>
-          <div class="flow-row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
-            <input class="uinput small" id="gc-reader" placeholder="目标读者（如：想入行的应届生）" style="min-width:200px">
-            <input class="uinput small" id="gc-position" placeholder="专业定位（如：AI 治理观察者）" style="min-width:200px">
-            <input class="uinput small" id="gc-budget" placeholder="时间预算（篇/周，如 4）" inputmode="numeric" style="min-width:150px">
-            <input class="uinput small" id="gc-due" type="date" title="截止日期（6 个月目标到期日）" style="min-width:150px">
-            <button class="secondarybtn" onclick="saveGoalCard()">保存目标卡</button>
-          </div>
-          <div class="flow-row" style="font-size:12px;color:var(--text-3);margin-top:6px" id="gc-hint">留空的字段按「未设」处理，不硬编。</div>
-        </details>
-        <div class="entry-foot">适合：分析自己的账号 · 两个数字都可以留空，留空不硬编</div>
+      <div class="entry-card official-entry">
+        <div class="entry-eyebrow">方式一 · 我的账号</div>
+        <div class="entry-title">授权读取我的创作数据</div>
+        <div class="entry-desc">走知乎官方开放平台 API。只读取当前授权账号的创作内容，Access Secret 只留在本机网关。</div>
+        <button class="authbtn" id="authbtn" onclick="startOfficial()">一键读取并生成轨迹 →</button>
+        <div class="entry-foot">适合：已有 Access Secret 的账号 · 不需要先经过额外页面</div>
       </div>
 
-      <!-- 进阶：抓取其他账号 -->
-      <div class="entry-card cli-entry" id="card-adv">
-        <div class="adv-head"><a class="adv-back" onclick="showHome('main')" style="cursor:pointer;font-size:12px;color:var(--text-3)">← 返回</a><span class="entry-eyebrow">进阶 · 抓取其他账号</span></div>
-        <div class="entry-title">分析任意公开账号</div>
-        <div class="entry-desc">输入对方的知乎 ID 或主页链接，走官方 CLI + 公开接口抓取公开回答与文章（无需对方授权）。</div>
-        <label class="field-label" for="uid">对方的知乎 ID 或主页链接</label>
-        <input class="uinput" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/...（支持粘贴完整主页链接）" autocomplete="off">
-        <button class="authbtn ghost" id="pubbtn" onclick="startFetch()">抓取该账号 →</button>
-        <div class="adv-spacer"></div>
+      <div class="entry-card cli-entry">
+        <div class="entry-eyebrow">方式二 · 公开账号</div>
+        <div class="entry-title">用知乎 CLI 抓取并分析</div>
+        <div class="entry-desc">优先调用官方 <b>zhihu-cli search zhihu</b>，再按 people ID 抓取对应公开主页、回答和文章，分析完成后自动返回第二屏。</div>
+        <label class="field-label" for="uid">知乎 ID 或主页链接</label>
+        <input class="uinput small" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/..." autocomplete="off">
+        <div class="flow-row">
+          <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
+          <button class="authbtn" id="pubbtn" onclick="startFetch()">CLI 抓取 →</button>
+        </div>
         <div class="entry-foot" id="cliHint">CLI 可用时走官方搜索；账号列表由公开接口精确补齐。CLI 未安装/未授权时会明确提示并自动走公开数据兜底。</div>
+        <div class="ferr" id="ferr"></div>
       </div>
     </div>
-    <!-- 共享错误条：主路径 / 进阶路径的输入校验错误都显示在这里 -->
-    <div class="ferr" id="ferr"></div>
 
-    <!-- 进阶入口：独立一行（上下铺开），不再挤在左下角 -->
-    <div class="adv-entry-row"><a onclick="showHome('adv')">进阶 · 分析其他账号（输入对方知乎 ID）→</a></div>
     <div class="quick-actions">
       <button class="secondarybtn" onclick="startDemo()">先看演示数据</button>
       <span>演示数据只用于体验，不代表真实账号</span>
@@ -539,18 +482,18 @@
     <div class="srcbadges" id="srcbadges"></div>
 
     <div class="tiernav" id="tiernav">
-      <div class="tbtn on" data-tier="m" role="button" tabindex="0" onkeydown="tierKey(event, 'm')" onclick="setTier('m')"><div class="n">月度卡</div><div class="s">全部抓取窗口 · 战略层</div></div>
+      <div class="tbtn on" data-tier="m" onclick="setTier('m')"><div class="n">月度卡</div><div class="s">全部抓取窗口 · 战略层</div></div>
       <span class="flow">▸</span>
-      <div class="tbtn" data-tier="w" role="button" tabindex="0" onkeydown="tierKey(event, 'w')" onclick="setTier('w')"><div class="n">周度卡</div><div class="s">7 天聚合 · 战术层</div></div>
+      <div class="tbtn" data-tier="w" onclick="setTier('w')"><div class="n">周度卡</div><div class="s">7 天聚合 · 战术层</div></div>
       <span class="flow">▸</span>
-      <div class="tbtn" data-tier="d" role="button" tabindex="0" onkeydown="tierKey(event, 'd')" onclick="setTier('d')"><div class="n">日度卡</div><div class="s">24 小时 · 执行层</div></div>
+      <div class="tbtn" data-tier="d" onclick="setTier('d')"><div class="n">日度卡</div><div class="s">24 小时 · 执行层</div></div>
     </div>
 
     <!-- 月度 -->
     <div class="tview on" id="tv-m">
       <div class="metrow">
         <div class="mcell"><div class="k">目标对齐分（0-100）<span class="tg est">估算</span></div><div class="v pri" id="m-align">—</div></div>
-        <div class="mcell"><div class="k">互动离散度（观察值）<span class="tg est">推导·非风格</span></div><div class="v" id="m-stab">—</div></div>
+        <div class="mcell"><div class="k">风格稳定性指数 <span class="tg est">推导</span></div><div class="v" id="m-stab">—</div></div>
         <div class="mcell"><div class="k">表现最佳内容 <span class="tg ok">真实</span></div><div class="v up" id="m-best">—</div></div>
         <div class="mcell"><div class="k">表现最差内容 <span class="tg ok">真实</span></div><div class="v down" id="m-worst">—</div></div>
       </div>
@@ -567,8 +510,6 @@
           <div class="mrow"><div class="mk">最佳 / 最差</div><div class="mv" id="m-bw">—</div></div>
           <div class="mrow"><div class="mk">分发通道<span class="tg est">需曝光数据</span></div><div class="mv" id="m-route">—</div></div>
         </div>
-        <!-- 目标卡回显：目标读者 / 专业定位 / 时间预算 / 截止日期 + 剩余天数 -->
-        <div class="mlist" id="goalcard-box" style="margin-top:10px"></div>
       </div>
     </div>
 
@@ -604,7 +545,6 @@
         <div class="dacard">
           <div class="dt">下一步（当下决策）</div>
           <div class="actbtns" id="d-acts"></div>
-          <div id="d-adv" style="display:none;margin-top:12px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--panel2,#f7f9fb);font-size:13px;line-height:1.8"></div>
         </div>
       </div>
       <div style="margin-top:14px;font-size:12px;color:var(--text-3);text-align:center">
@@ -652,19 +592,6 @@
 
     <div class="kbtabs" id="kbtabs"></div>
     <div id="mlist2"></div>
-
-    <!-- 复盘闭环（报告第 9 页要求）：选动作 → 记改动与预期 → 到期补数后判继续/停止 -->
-    <div class="mlist" style="margin-top:18px;border:1px solid var(--border);border-radius:12px;padding:12px 14px">
-      <div class="mk" style="font-size:14px;margin-bottom:8px">复盘闭环 <span class="tg est">本地保存 · 不上传</span></div>
-      <div class="flow-row" style="flex-wrap:wrap;gap:8px">
-        <select class="uinput small" id="rv-action" style="min-width:260px"></select>
-        <input class="uinput small" id="rv-change" placeholder="我改了什么（具体到变量）" style="min-width:220px">
-        <input class="uinput small" id="rv-expect" placeholder="我预期什么（可验证）" style="min-width:220px">
-        <input class="uinput small" id="rv-due" type="date" title="复判日期">
-        <button class="secondarybtn" onclick="addReview()">加入复盘</button>
-      </div>
-      <div id="rv-list" style="margin-top:10px;font-size:13px"></div>
-    </div>
   </section>
 
   <footer>
@@ -682,8 +609,8 @@
     <div class="mtitle" id="m-title"></div>
     <div class="mgrid">
       <div class="mcell2"><div class="k">表现（相对基线）<span class="tg" id="m-dtag"></span></div><div class="v" id="m-delta"></div></div>
-      <div class="mcell2"><div class="k">互动数（赞+评+藏）<span class="tg" id="m-itag"></span></div><div class="v" id="m-interact"></div></div>
-      <div class="mcell2 full"><div class="k">① 诊断（对齐方法模块）</div><div class="v txt" id="m-diag"></div></div>
+      <div class="mcell2"><div class="k">互动数（赞+评）<span class="tg" id="m-itag"></span></div><div class="v" id="m-interact"></div></div>
+      <div class="mcell2 full"><div class="k">① 诊断（对齐 M? 模块）</div><div class="v txt" id="m-diag"></div></div>
       <div class="mcell2 full"><div class="k">② 处方（下一步动作）</div><div class="v adv" id="m-advice"></div></div>
       <div class="mcell2 full"><div class="k">③ 依据（方法 + 数据信号）</div><div class="v txt" id="m-basis"></div></div>
     </div>
@@ -874,7 +801,7 @@ var KB = [
     platform: "知乎", stage: "全阶段",
     signalDesc: "粉丝进度 < 50% 且距 6 个月窗口过半（常驻兜底）",
     signal: function (A) {
-      if (A.followersKind !== "api" && A.followersKind !== "pub" && A.followersKind !== "user") return null; /* 无粉丝口径时不硬编（归因克制） */
+      if (!A.followersReal) return null; /* 粉丝口径不可得时不硬编（归因克制） */
       var pct = A.followers / GOAL;
       if (pct >= 0.5) return null;
       return { score: 30, ctx: { pct: pct } };
@@ -908,40 +835,7 @@ var DEMO_PROFILE = { name: "山人书房（演示）", id: "demo", followers: 52
 /* ---------- 全局状态 ---------- */
 var curStep = 1, unlocked = 1, mode = "ok";
 var A = null, GOAL = 10000, kbFilter = "all";
-/* 用户自定义粉丝数：口径=「自定义（用户填写）」，非平台数据、非合成演示。
-   优先级：接口真值(api) > 用户自定义(user) > 合成演示(demo) > 缺(null，不硬编) */
-var MY_FANS = null;
-function parseFans(v) {
-  v = (v || "").replace(/[,，\s]/g, "");
-  if (!v) return null;
-  if (!/^\d+$/.test(v)) return NaN;
-  var n = parseInt(v, 10);
-  if (!(n > 0 && n <= 100000000)) return NaN;
-  return n;
-}
-function parseGoal(v) {
-  v = (v || "").replace(/[,，\s]/g, "");
-  if (!v) return 10000;
-  if (!/^\d+$/.test(v)) return NaN;
-  var n = parseInt(v, 10);
-  if (!(n > 0 && n <= 100000000)) return NaN;
-  return n;
-}
 var KB_REPO = "https://github.com/jackyjinggit/kanshan-kb";
-/* ===== KB 消费索引（WEB-03 · 从 kanshan-kb 已交付仓库生成，勿手写）=====
-   字段：id=method_id / m=模块 / t=标题 / p=仓库内真实路径 / ev=证据等级 / ver=版本日期
-   生成方式：扫描 M1-M10 目录的 *.md frontmatter（title/type/method_id/module/evidence_level/created|updated）
-   链接拼法：KB_REPO + "/blob/main/" + p —— 依据不靠标题猜文件名 */
-var KB_INDEX = [{"id":"M1-01","m":"M1","t":"三维定位法","p":"M1_定位与赛道选择/M1-01_三维定位法.md","ev":"一手框架改编的可检验运营假设，非平台算法","ver":"2026-09-08"},{"id":"M1-02","m":"M1","t":"人设黄金三角","p":"M1_定位与赛道选择/M1-02_人设黄金三角.md","ev":"一手内容指导启发的项目组合框架，效果待验证","ver":"2026-09-08"},{"id":"M1-03","m":"M1","t":"内容缺口挖掘","p":"M1_定位与赛道选择/M1-03_内容缺口挖掘.md","ev":"用户需求研究改编，缺口仅在声明样本内成立","ver":"2026-09-08"},{"id":"M2-01","m":"M2","t":"账号五件套一致性检查","p":"M2_人设与账号包装/M2-01_账号五件套.md","ev":"历史官方案例加项目检查清单，非增长保证","ver":"2026-09-08"},{"id":"M2-02","m":"M2","t":"价值承诺句式","p":"M2_人设与账号包装/M2-02_价值承诺句式.md","ev":"价值主张与用户需求框架改编，承诺待用户验证","ver":"2026-09-08"},{"id":"M3-01","m":"M3","t":"选题矩阵","p":"M3_选题方法论/M3-01_选题矩阵.md","ev":"需求设计与平台案例启发的项目排期方法","ver":"2026-09-08"},{"id":"M3-02","m":"M3","t":"选题库搭建与来源去重","p":"M3_选题方法论/M3-02_选题库搭建.md","ev":"官方数据口径与项目内容管理规范","ver":"2026-09-08"},{"id":"M3-03","m":"M3","t":"爆款三特征审题","p":"M3_选题方法论/M3-03_爆款三特征审题.md","ev":"项目自拟质量检查，不是经验证爆款预测模型","ver":"2026-09-08"},{"id":"M4-01","m":"M4","t":"爆款公式的质量门调用","p":"M4_内容生产与爆款公式/M4-01_爆款公式质量门调用.md","ev":"项目质量门调用，未验证爆款效果","ver":"2026-09-08"},{"id":"M4-02","m":"M4","t":"四段式脚本的运营调用","p":"M4_内容生产与爆款公式/M4-02_四段式脚本调用.md","ev":"可用性研究启发的结构实验，非知乎完读保证","ver":"2026-09-08"},{"id":"M4-03","m":"M4","t":"视觉规范调用与验收","p":"M4_内容生产与爆款公式/M4-03_视觉规范验收.md","ev":"W3C指导加项目质量控制，未验证分发收益","ver":"2026-09-08"},{"id":"M5-01","m":"M5","t":"知乎三路分发诊断","p":"M5_平台算法与分发机制/01_知乎三路分发诊断.md","ev":"官方公开披露与技术实践；诊断流程为项目设计","ver":"2026-09-08"},{"id":"M5-02","m":"M5","t":"知乎互动权重的证据边界与分项诊断","p":"M5_平台算法与分发机制/02_知乎互动权重的证据边界.md","ev":"官方历史指南加2025技术实践；当前数值权重未知","ver":"2026-09-08"},{"id":"M5-03","m":"M5","t":"盐选分发与投稿漏斗诊断","p":"M5_平台算法与分发机制/03_盐选分发与投稿漏斗.md","ev":"官方作者平台历史指南；现行细则待后台复核","ver":"2026-09-08"},{"id":"M5-04","m":"M5","t":"多平台一源多态的内容适配","p":"M5_平台算法与分发机制/04_多平台一源多态.md","ev":"官方技术与版权边界；工作流为项目设计","ver":"2026-09-08"},{"id":"M5-05","m":"M5","t":"流量池五层分发与内容生命周期","p":"M5_平台算法与分发机制/M5-05_流量池五层分发与内容生命周期.md","ev":"社区口径整理（非官方）——多源交叉：创作者社区运营实践总结 + 第三方数据平台观察 + 竞品工具实测对照；引用需标注「社","ver":"2026-09-12"},{"id":"M6-01","m":"M6","t":"12条垂直内容实验而非自动打标签规则","p":"M6_发布与冷启动运营/01_12条垂直内容实验.md","ev":"内容冷启动技术背景；12条为可调整的项目实验预算","ver":"2026-09-08"},{"id":"M6-02","m":"M6","t":"发布时机的配对观察","p":"M6_发布与冷启动运营/02_发布时机的配对观察.md","ev":"官方技术中的混杂因素说明；观察设计需本账号验证","ver":"2026-09-08"},{"id":"M6-03","m":"M6","t":"冷启动中的有效反馈与互动引导","p":"M6_发布与冷启动运营/03_冷启动互动引导.md","ev":"官方互动与内容规范；反馈工作流为项目设计","ver":"2026-09-08"},{"id":"M7-01","m":"M7","t":"评论区引导话术：把泛泛互动转成可回答的问题","p":"M7_粉丝增长与互动运营/M7-01_评论区引导话术.md","ev":"官方社区运营建议迁移；知乎规则已核验；效果待账号验证","ver":"2026-09-08"},{"id":"M7-02","m":"M7","t":"三级粉丝池：按可见参与行为安排服务","p":"M7_粉丝增长与互动运营/M7-02_三级粉丝池.md","ev":"本项目服务分层启发式；非平台算法与非经验证的增长定律","ver":"2026-09-08"},{"id":"M7-03","m":"M7","t":"UGC 共创：把读者问题变成可核验的小实验","p":"M7_粉丝增长与互动运营/M7-03_UGC共创.md","ev":"官方社区与用户研究方法迁移；知乎规则已核验；成效待验证","ver":"2026-09-08"},{"id":"M8-01","m":"M8","t":"核心指标矩阵：先验口径，再诊断环节","p":"M8_数据复盘与迭代/M8-01_核心指标矩阵.md","ev":"官方指标定义与数据质量研究；计算规则为明确工程约束","ver":"2026-09-08"},{"id":"M8-02","m":"M8","t":"数据热力图：显示样本和缺口的分组复盘","p":"M8_数据复盘与迭代/M8-02_数据热力图.md","ev":"分组数据质量研究支持；可视化设计为本项目启发式","ver":"2026-09-08"},{"id":"M8-03","m":"M8","t":"A/B 测试：随机实验与自然发文对比的边界","p":"M8_数据复盘与迭代/M8-03_A-B测试.md","ev":"随机实验一手研究；知乎自然分发的迁移边界明确","ver":"2026-09-08"},{"id":"M9-01","m":"M9","t":"金字塔变现模型：从单一可交付价值验证起步","p":"M9_变现路径/M9-01_金字塔变现模型.md","ev":"官方创作者运营建议迁移；金字塔为规划启发式；无收益保证","ver":"2026-09-08"},{"id":"M9-02","m":"M9","t":"私域自愿转化：把持续服务与用户许可一起设计","p":"M9_变现路径/M9-02_私域自愿转化.md","ev":"用户研究与隐私控制原则迁移；第三方服务设计约束；非收益或流量承诺","ver":"2026-09-08"},{"id":"M10-01","m":"M10","t":"平台红线与内容发布核对","p":"M10_合规与风险/M10-01_平台红线与内容发布核对.md","ev":"官方规则与本项目执行流程","ver":"2026-09-08"},{"id":"M10-02","m":"M10","t":"OAuth 与最小数据采集","p":"M10_合规与风险/M10-02_OAuth与最小数据采集.md","ev":"官方接入文档与公开标准","ver":"2026-09-08"}];
-var KB_INDEX_BUILT = "2026-09-13";
-function kbFind(id) {
-  for (var i = 0; i < KB_INDEX.length; i++) if (KB_INDEX[i].id === id) return KB_INDEX[i];
-  return null;
-}
-function kbUrl(id) {
-  var it = kbFind(id);
-  return it ? (KB_REPO + "/blob/main/" + it.p.split("/").map(encodeURIComponent).join("/")) : null;
-}
 
 /* ============ 流程控制 ============ */
 function goStep(s) {
@@ -1117,19 +1011,6 @@ function startOfficial() {
   try {
   var ferr = document.getElementById("ferr");
   if (ferr) ferr.classList.remove("show");
-  /* 主路径同样支持自定义粉丝数/目标（WEB-11：失败不提交无效值） */
-  var g = parseGoal(document.getElementById("ugoal") ? document.getElementById("ugoal").value : "");
-  if (isNaN(g)) {
-    if (ferr) { ferr.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。"; ferr.classList.add("show"); }
-    return;
-  }
-  GOAL = g;
-  var fv = parseFans(document.getElementById("ufans") ? document.getElementById("ufans").value : "");
-  if (isNaN(fv)) {
-    if (ferr) { ferr.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示不用自定义口径。"; ferr.classList.add("show"); }
-    return;
-  }
-  MY_FANS = fv;
   setLoadingButtons(true, false);
   resetLoadState();
   goStep(0);
@@ -1160,7 +1041,6 @@ function startOfficial() {
     .then(function () {
       setLine(l4, QUOTA ? "done" : "fail"); setLine(l5, "doing");
       A = buildAnalysis("official", "me", null, contents, null, []);
-      maybeAutoFans();
       matchKB();
       setLine(l5, "done"); setLine(l6, "done");
       setLoadingButtons(false, false);
@@ -1176,11 +1056,11 @@ function startOfficial() {
           hint = "数据读取功能（官方 API / 公开抓取）需在本机运行网关版才能使用；当前在线版可直接点下方「查看演示数据」体验完整流程。";
         } else {
           msg = "本地网关未启动";
-          hint = "打开本工具所在文件夹，双击 <b>启动.bat</b>，等黑窗口显示「服务已启动」、浏览器打开 <b>http://localhost:8686/</b> 后再点本按钮。没装 Python？到 python.org 安装（勾选 Add to PATH）。也可用方式二或演示数据。";
+          hint = "打开 frontend 文件夹，双击 <b>启动.bat</b>，等黑窗口显示「服务已启动」、浏览器打开 <b>http://localhost:8686/</b> 后再点本按钮。没装 Python？到 python.org 安装（勾选 Add to PATH）。也可用方式二或演示数据。";
         }
       } else if (c === "NO_SECRET") {
         msg = "本机未配置 Access Secret";
-        hint = "两步：① 打开 <a href='https://developer.zhihu.com/profile' target='_blank' style='color:var(--pri)'>developer.zhihu.com/profile</a> 生成 Access Secret；② 推荐用<b>环境变量</b> <code>ZHIHU_ACCESS_SECRET</code> 注入（安全存储，不落盘）；也可写入本工具目录下的 <b>secret.txt</b>（仅限本机使用）。配置后重启 <b>启动.bat</b>。暂无密钥？用方式二或演示数据。";
+        hint = "两步：① 打开 <a href='https://developer.zhihu.com/profile' target='_blank' style='color:var(--pri)'>developer.zhihu.com/profile</a> 生成密钥；② 把密钥粘贴进 frontend 文件夹下的 <b>secret.txt</b>（启动.bat 会自动创建空文件，填入保存即可），然后重启 <b>启动.bat</b>。暂无密钥？用方式二或演示数据。";
       } else if (c === "EMPTY") {
         msg = "官方接口返回空（该账号暂无公开创作内容）";
         hint = "新号/内容均为私密时属正常。可先看演示数据，或用方式二抓取任意公开账号。";
@@ -1226,18 +1106,7 @@ function startFetch() {
     }
     return;
   }
-  var g = parseGoal(goalTxt);
-  if (isNaN(g)) {
-    if (ferr) { ferr.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。"; ferr.classList.add("show"); }
-    return;
-  }
-  GOAL = g;
-  var fv = parseFans(document.getElementById("ufans") ? document.getElementById("ufans").value : "");
-  if (isNaN(fv)) {
-    if (ferr) { ferr.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示不用自定义。"; ferr.classList.add("show"); }
-    return;
-  }
-  MY_FANS = fv;
+  GOAL = parseInt(goalTxt, 10) || 10000;
 
   setLoadingButtons(false, true);
   resetLoadState();
@@ -1311,25 +1180,6 @@ function startFetch() {
 }
 
 function startDemo() {
-  /* 一键粘贴/演示入口同样支持自定义粉丝数：填了就用你填的口径（标记「自定义」），不填用合成演示值 */
-  var fEl = document.getElementById("ufans");
-  var fv = parseFans(fEl ? fEl.value : "");
-  if (isNaN(fv)) {
-    var fe = document.getElementById("ferr");
-    if (fe) { fe.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示用演示合成值。"; fe.classList.add("show"); }
-    return;
-  }
-  MY_FANS = fv;
-  var gEl = document.getElementById("ugoal");
-  if (gEl && gEl.value) {
-    var g2 = parseGoal(gEl.value);
-    if (isNaN(g2)) {
-      var fe2 = document.getElementById("ferr");
-      if (fe2) { fe2.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）。"; fe2.classList.add("show"); }
-      return;
-    }
-    GOAL = g2;
-  }
   resetLoadState();
   setLoadingButtons(false, false);
   A = buildAnalysis("demo", DEMO_PROFILE.id, DEMO_PROFILE, null, null, []);
@@ -1342,10 +1192,6 @@ function retryLoad() { setMode("ok"); goStep(1); }
 
 /* ============ 分析引擎 ============ */
 function fmtN(n) { return (n || 0).toLocaleString("zh-CN"); }
-/* WEB-12：缺失与真实 0 必须可区分——未提供/非数值 → null，不是 0 */
-function timeStr() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
-function numOrNull(v) { return (v === undefined || v === null || v === "" || isNaN(Number(v))) ? null : Number(v); }
-function missTxt(p) { return (p && p.missingFields && p.missingFields.length) ? p.missingFields.join("/") : ""; }
 function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 function short(s, n) { s = String(s); return s.length > n ? s.slice(0, n) + "…" : s; }
 function fmtDate(ts) { var d = new Date(ts); return ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
@@ -1363,9 +1209,9 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
         type: it.ContentType || "answer",
         title: it.Title || "（无题）",
         url: it.Url || "",
-        voteup: numOrNull(it.LikeCount),
-        fav: numOrNull(it.FavoriteCount),
-        comments: numOrNull(it.CommentCount),
+        voteup: it.LikeCount || 0,
+        fav: it.FavoriteCount || 0,
+        comments: it.CommentCount || 0,
         created: (it.CreatedAt || 0) * 1000
       });
     });
@@ -1378,7 +1224,7 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
       answers.data.forEach(function (a) {
         /* 缺 created_time 的条目（如置顶卡）会算成 epoch 0=1970，压坏时间轴比例——直接跳过 */
         if (!a.created_time) return;
-        posts.push({ type: "answer", title: (a.question && a.question.title) ? a.question.title : "（回答）", voteup: numOrNull(a.voteup_count), fav: numOrNull(a.fav_count != null ? a.fav_count : a.favorite_count), comments: numOrNull(a.comment_count), created: a.created_time * 1000 });
+        posts.push({ type: "answer", title: (a.question && a.question.title) ? a.question.title : "（回答）", voteup: a.voteup_count || 0, comments: a.comment_count || 0, created: a.created_time * 1000 });
       });
     }
     if (articles && articles.data) {
@@ -1389,7 +1235,7 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
         /* 知乎文章接口 created 是秒；new Date(秒) 被当毫秒解会落到 1970-01-21——数字按秒*1000 */
         var ms = (typeof ct === "number") ? ct * 1000 : new Date(ct).getTime();
         if (!ms || ms <= 0) return;
-        posts.push({ type: "article", title: a.title || "（文章）", voteup: numOrNull(a.voteup_count), fav: numOrNull(a.fav_count != null ? a.fav_count : a.favorite_count), comments: numOrNull(a.comment_count), created: ms });
+        posts.push({ type: "article", title: a.title || "（文章）", voteup: a.voteup_count || 0, comments: a.comment_count || 0, created: ms });
       });
     }
     posts.sort(function (x, y) { return y.created - x.created; });
@@ -1402,14 +1248,6 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
     posts.sort(function (x, y) { return y.created - x.created; });
   }
 
-  /* WEB-12：分项缺失时计入「缺失字段」，互动合计仍按可得的项累加，但页面必须标注缺失 */
-  posts.forEach(function (p) {
-    var miss = [];
-    if (p.voteup == null) miss.push("赞");
-    if (p.comments == null) miss.push("评");
-    if (p.fav == null) miss.push("藏");
-    p.missingFields = miss;
-  });
   var interacts = posts.map(function (p) { return (p.voteup || 0) + (p.comments || 0) + (p.fav || 0); });
   var base = avg(interacts);
   var maxI = interacts.length ? Math.max.apply(null, interacts) : 0;
@@ -1453,17 +1291,6 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
   }
 
   var followers = profile ? (profile.follower_count != null ? profile.follower_count : null) : null;
-  /* 证据卡（报告第 9 页要求）：来源 / 采集时间 / 窗口 / 样本量 / 缺失项 —— 全局一套口径 */
-  var _t0 = timeStr(), _mins = posts.length ? posts[posts.length - 1].created : null, _maxs = posts.length ? posts[0].created : null;
-  var _dayTxt = function (ms) { if (!ms) return "—"; var d2 = new Date(ms); return d2.getFullYear() + "-" + ("0" + (d2.getMonth() + 1)).slice(-2) + "-" + ("0" + d2.getDate()).slice(-2); };
-  var _missSet = {};
-  posts.forEach(function (pp) { (pp.missingFields || []).forEach(function (f) { _missSet[f] = 1; }); });
-  var _missArr = Object.keys(_missSet);
-  /* 粉丝口径：api（接口真值）/ user（用户自定义）/ demo（合成演示）/ null（缺，不硬编） */
-  var fKind = (followers != null) ? "api" : (MY_FANS != null ? "user" : (source === "demo" ? "demo" : null));
-  var fVal = (fKind === "api") ? followers
-           : (fKind === "user") ? MY_FANS
-           : (fKind === "demo") ? DEMO_PROFILE.followers : null;
   return {
     source: source, id: id,
     /* 内容接口是否双双受限（live 模式下 Answers/Articles 均为 null = 两个内容源都没抓到）。
@@ -1471,12 +1298,8 @@ function buildAnalysis(source, id, profile, answers, articles, snaps) {
     contentBlocked: source === "live" ? (!answers && !articles) : false,
     name: profile ? (profile.name || id) : (source === "official" ? "我的知乎账号（官方 API）" : "演示账号"),
     headline: profile ? (profile.headline || "") : "",
-    followers: fVal,
-    followersReal: fKind === "api",
-    followersKind: fKind,
-    observedAt: _t0,
-    windowText: posts.length ? (_dayTxt(_mins) + " ~ " + _dayTxt(_maxs)) : "—",
-    missingNote: _missArr.length ? _missArr.join("/") : "",
+    followers: (followers != null) ? followers : (source === "demo" ? DEMO_PROFILE.followers : null),
+    followersReal: followers != null,
     voteupTotal: profile ? (profile.voteup_count || 0) : DEMO_PROFILE.voteup_count,
     ansOK: ansOK, artOK: artOK,
     posts: posts, base: base, maxI: maxI,
@@ -1509,34 +1332,11 @@ function matchKB() {
 function renderAll() {
   renderSrcBadges();
   renderMonthView();
-  renderGoalCardBox();
   renderWeekView();
   renderDayView();
   renderScreen3();
 }
 
-/* 反馈：日卡动作按钮的行内建议（不再用 alert 弹窗；人话，不用模块黑话） */
-var DAY_ACTIONS = {
-  chase: function (r) { return { h: "追加建议 · 内容生产", b: "本篇互动为基线的 <b>" + r + " 倍</b>——48 小时内<b>复制本篇结构发一篇姊妹篇</b>：验证选题带宽是否可复现（可复现才算证据，不可复现=运气，不追）。" }; },
-  polish: function (r) { return { h: "补强建议 · 内容生产", b: "本篇互动为基线的 <b>" + r + " 倍</b>——先补强<b>标题与开头</b>（疑问式/数字锚点/具体场景），再考虑发新篇；不追加投入。" }; },
-  interact: function () { return { h: "互动建议 · 粉丝互动", b: "<b>置顶本篇评论区的高赞观点</b> + 结尾补一个具体问题（可干预动作）。「晚间 20-22 点最佳」属待验证假设——以你自己的历史数据为准。" }; },
-  stop: function (r) { return { h: "止损建议 · 数据复盘", b: "持续低于基线（当前 " + r + " 倍）即<b>转入复盘</b>：对照「最佳 / 最差」找差异变量（标题/形态/题材），先想清楚再发下一篇，不追加投入。" }; }
-};
-function showDayAction(kind, ratio) {
-  var box = document.getElementById("d-adv"); if (!box) return;
-  var d0 = DAY_ACTIONS[kind](ratio);
-  box.innerHTML = '<b>' + d0.h + '</b><br>' + d0.b +
-    '<br><small style="color:var(--text-3)">完整处方与「加入复盘」在下方「生成校准动作卡」页。</small>';
-  box.style.display = "block";
-  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-window.showDayAction = showDayAction;
-/* 证据条：来源 · 采集时间 · 窗口 · 样本量 · 缺失（各卡共用同一口径，避免「顶层演示/细节真实」不一致） */
-function evBadge() {
-  if (!A) return "";
-  var src = A.source === "demo" ? "合成演示" : (A.source === "official" ? "官方授权 API" : "公开抓取");
-  return '<span class="tg est">证据：' + src + ' · 采集 ' + (A.observedAt || "—") + ' · 窗口 ' + (A.windowText || "—") + ' · 样本 ' + A.posts.length + ' 篇' + (A.missingNote ? ' · <b>缺失字段 ' + A.missingNote + '</b>' : ' · 无缺失字段') + '</span>';
-}
 function renderSrcBadges() {
   var el = document.getElementById("srcbadges");
   var h = "";
@@ -1548,16 +1348,11 @@ function renderSrcBadges() {
     h += '<span class="tg est">粉丝数：官方用户接口不含该字段，不硬编</span>';
     if (QUOTA) h += '<span class="tg ' + (QUOTA.RemainingQuota > 0 ? "ok" : "est") + '">今日 API 额度剩 ' + fmtN(QUOTA.RemainingQuota) + '/' + fmtN(QUOTA.TotalQuota) + '（' + esc(QUOTA.APIName || "用户数据") + '·真实）</span>';
     h += '<span class="tg pri">命中方法 ' + MATCHED.length + ' 条</span>';
-    h += evBadge();
   } else if (A.source === "live") {
     var t = ("0" + A.fetchedAt.getHours()).slice(-2) + ":" + ("0" + A.fetchedAt.getMinutes()).slice(-2);
      h += '<span class="tg ok">知乎公开账号数据 · ' + t + '</span>';
      h += '<span class="tg ok">账号：' + esc(A.name) + '</span>';
-    if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
-    else if (A.followersKind === "pub") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（公开数据）</span>';
-    else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
-    else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
-    else h += '<span class="tg est">粉丝 缺失（不硬编）</span>';
+    h += A.followersReal ? '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>' : '<span class="tg est">粉丝快照受限</span>';
     h += '<span class="tg ' + (A.ansOK ? "ok" : "est") + '">回答 ' + (A.ansOK ? A.posts.filter(function (p) { return p.type === "answer"; }).length + " 篇（真实）" : "接口受限") + '</span>';
     h += '<span class="tg ' + (A.artOK ? "ok" : "est") + '">文章 ' + (A.artOK ? A.posts.filter(function (p) { return p.type === "article"; }).length + " 篇（真实）" : "接口受限") + '</span>';
      h += '<span class="tg pri">命中方法 ' + MATCHED.length + ' 条</span>';
@@ -1565,16 +1360,8 @@ function renderSrcBadges() {
      else if (A.cli) h += '<span class="tg est">官方 CLI 未完成调用 · 公开数据兜底</span>';
     if (A.snaps.length >= 2) h += '<span class="tg ok">快照 ' + A.snaps.length + ' 次 · 真实增速已积累</span>';
     else h += '<span class="tg est">快照积累 ' + A.snaps.length + '/2（隔天再抓即出增速）</span>';
-    h += evBadge();
   } else {
     h += '<span class="tg demo">演示数据（非真实）· 手动体验</span>';
-    /* 粉丝口径徽标：demo 分支同样要显示（WEB-08：来源与可得性各卡一致，不能只在详情里出现） */
-    if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
-    else if (A.followersKind === "pub") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（公开数据）</span>';
-    else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
-    else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
-    else h += '<span class="tg est">粉丝 缺失（不硬编）</span>';
-    h += evBadge();
   }
   /* WEB-02：显式标「分析截至时间」＝最新一篇的发布日，让「断更 N 天」的基准可核对，
      不让读者拿抓取时刻去猜分析窗口的右边界 */
@@ -1606,8 +1393,6 @@ function renderMonthView() {
 
   pts.forEach(function (it, idx) {
     var x = 3 + (it.created - start) / span * 94;
-    /* 同一天多篇时做确定性横向抖动，避免节点/标签完全重叠点不动 */
-    x = Math.max(1.5, Math.min(97.5, x + (((idx * 37) % 7) - 3) * 0.45));
     var off = -Math.max(-46, Math.min(46, (it.interact / Math.max(1, A.maxI)) * 46));
     var pct = Math.round((it.ratio - 1) * 100);
     var p = document.createElement("div");
@@ -1625,19 +1410,14 @@ function renderMonthView() {
     el.appendChild(p);
   });
 
-  if (A.followers != null) {
+  if (A.followersReal) {
     var goalPct = Math.min(100, Math.round(A.followers / GOAL * 100));
-    /* WEB-07：不为「目标对齐分」这一未经校准的合成总分背书——两因素分开展示，权重可见 */
     var align = Math.max(5, Math.min(99, Math.round(goalPct * 0.8 + A.stability * 0.2)));
-    document.getElementById("m-align").innerHTML = align + '<small> / 100（估算口径：目标进度 ' + goalPct + '% × 0.8 + 互动离散度 ' + A.stability + ' × 0.2，权重未校准）</small>';
+    document.getElementById("m-align").innerHTML = align + '<small> · 目标进度 ' + goalPct + '%</small>';
   } else {
     document.getElementById("m-align").innerHTML = '<small style="font-size:12px;color:var(--text-3)">粉丝口径不可得（官方接口无此字段，不硬编）</small>';
   }
-  /* WEB-07：本指标实际测量对象=互动量的离散度（变异系数换算），不是主题/文风/读者定位一致性。
-     改名如实；并显性提示内容年龄混杂 */
-  document.getElementById("m-stab").innerHTML = A.posts.length >= 4
-    ? A.stability + '<small> / 100 · 样本 ' + A.posts.length + ' 篇（互动离散度，非主题/文风一致性；含内容年龄混杂）</small>'
-    : '<small>样本不足（<4 篇）</small>';
+  document.getElementById("m-stab").innerHTML = A.posts.length >= 4 ? A.stability + '<small> / 100</small>' : '<small>样本不足</small>';
   document.getElementById("m-best").innerHTML = "+" + fmtN(A.best.interact) + '<small> · ' + esc(short(A.best.title, 10)) + '</small>';
   document.getElementById("m-worst").innerHTML = fmtN(A.worst.interact) + '<small> · ' + esc(short(A.worst.title, 10)) + '</small>';
 
@@ -1646,7 +1426,7 @@ function renderMonthView() {
   for (var t in A.tAvg) if (A.tAvg[t] > bestTypeV) { bestTypeV = A.tAvg[t]; bestType = t; }
   if (bestType) tops.push((bestType === "answer" ? "回答" : bestType === "article" ? "文章" : "想法") + "形态（均 " + Math.round(bestTypeV) + " 互动/篇）");
   if (A.qAvg > 0 && A.sAvg > 0) tops.push(A.qAvg >= A.sAvg ? "疑问式标题（均 " + Math.round(A.qAvg) + "）＞陈述式（" + Math.round(A.sAvg) + "）" : "陈述式标题（均 " + Math.round(A.sAvg) + "）＞疑问式（" + Math.round(A.qAvg) + "）");
-  if (A.bestW >= 0 && A.wk[A.bestW] && A.wk[A.bestW].n >= 2) tops.push("周" + WNAMES[A.bestW] + "发布（均 " + Math.round(A.bestWv) + "/篇 · " + A.wk[A.bestW].n + " 篇样本）");
+  if (A.bestW >= 0 && A.wk[A.bestW]) tops.push("周" + WNAMES[A.bestW] + "发布（均 " + Math.round(A.bestWv) + "/篇）");
   document.getElementById("m-top3").innerHTML = tops.map(function (x, i) { return "①②③"[i] + " " + x; }).join("<br>") || "样本不足";
 
   document.getElementById("m-bw").innerHTML =
@@ -1713,24 +1493,17 @@ function renderWeekView() {
   document.getElementById("w-best").innerHTML = wBest
     ? "<b>" + WNAMES[new Date(wBest.created).getDay()] + "</b>——" + esc(short(wBest.title, 22)) + "（" + fmtN(wBest.interact) + ' 互动 <span class="tg ok">真实</span>）'
     : (A.contentBlocked ? '本周无数据（内容接口受限，无法判读发布情况）' : "本周暂无发布");
-  /* WEB-06：单篇样本不足以支撑「最强日」，门槛 n>=2 且明示样本数 */
-  document.getElementById("w-strong").innerHTML = (A.bestW >= 0 && A.wk[A.bestW] && A.wk[A.bestW].n >= 2)
-    ? "<b>" + WNAMES[A.bestW] + "</b>（历史均 " + Math.round(A.bestWv) + " 互动/篇，" + A.wk[A.bestW].n + ' 篇样本 <span class="tg ok">真实</span> · 发布时机模块依据）'
-    : (A.bestW >= 0 && A.wk[A.bestW]
-        ? "样本不足：最多的一天仅 <b>" + A.wk[A.bestW].n + " 篇</b>，不足以判「最强日」（≥2 篇，建议 ≥3 篇）"
-        : "样本不足（≥2 篇后可判）");
-  var tCount = {}, tTotal = 0;
-  weekPosts.forEach(function (p) { var n = TYPW[p.type] || p.type; tCount[n] = (tCount[n] || 0) + 1; tTotal += 1; });
-  var typeSummary = Object.keys(tCount).sort(function (a, b) { return tCount[b] - tCount[a]; })
-    .map(function (k) { return k + " " + tCount[k]; }).join(" · ");
-  var typeTxt = tTotal ? "本周发布 <b>" + tTotal + "</b> 篇：" + esc(typeSummary) : (A.contentBlocked ? "本周无数据（内容接口受限）" : "本周无发布");
+  document.getElementById("w-strong").innerHTML = A.bestW >= 0 && A.wk[A.bestW]
+    ? "<b>" + WNAMES[A.bestW] + "</b>（历史均 " + Math.round(A.bestWv) + " 互动/篇，" + A.wk[A.bestW].n + ' 篇样本 <span class="tg ok">真实</span> · M6 依据）'
+    : "样本不足（≥2 篇后可判）";
+  var tArr = weekPosts.map(function (p) { return TYPW[p.type] || p.type; });
+  var typeTxt = tArr.length ? "本周发布 " + tArr.length + " 篇：" + esc(tArr.join("、")) : (A.contentBlocked ? "本周无数据（内容接口受限）" : "本周无发布");
   var bestT = (A.tAvg.answer != null && A.tAvg.article != null) ? (A.tAvg.answer >= A.tAvg.article ? "回答" : "文章") : (A.tAvg.answer != null ? "回答" : A.tAvg.article != null ? "文章" : null);
-  if (bestT) typeTxt += "；历史最有效：<b>" + bestT + "</b>（内容生产模块依据）";
+  if (bestT) typeTxt += "；历史最有效：<b>" + bestT + "</b>（M4 依据）";
   document.getElementById("w-type").innerHTML = typeTxt;
-  /* WEB-06：处方层同样加门槛——样本 < 2 不得「安排主推」 */
-  document.getElementById("w-plan").innerHTML = (A.bestW >= 0 && A.wk[A.bestW] && A.wk[A.bestW].n >= 2)
-    ? "<b>下周" + WNAMES[A.bestW] + "</b>安排主推（样本 " + A.wk[A.bestW].n + " 篇）" + (A.best ? "（结构参考：《" + esc(short(A.best.title, 14)) + "》）" : "") + '<br><small style="color:var(--text-3)">这是观察线索，不是已验证结论——建议同时记录对照日数据</small>'
-    : "样本不足：不足 2 篇时不推荐发布时段，先按习惯发并记录对照";
+  document.getElementById("w-plan").innerHTML = A.bestW >= 0
+    ? "<b>下周" + WNAMES[A.bestW] + "</b>安排主推" + (A.best ? "（结构参考：《" + esc(short(A.best.title, 14)) + "》）" : "")
+    : "积累发布数据后自动生成";
 }
 
 /* ============ 日度视图（M5 三路分发归因） ============ */
@@ -1811,36 +1584,24 @@ function renderDayView() {
   var acts = "";
   var isRecent = ageH <= 48;
   acts += isRecent && ratio >= 1.2
-    ? '<div class="abtn rec" onclick="showDayAction(\'chase\',' + ratio.toFixed(1) + ')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
-    : '<div class="abtn" onclick="showDayAction(\'polish\',' + ratio.toFixed(2) + ')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
-  acts += '<div class="abtn" onclick="showDayAction(\'interact\',0)"><b>互动</b>置顶回复<div class="why">可干预动作</div></div>';
-  acts += '<div class="abtn" onclick="showDayAction(\'stop\',' + ratio.toFixed(2) + ')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
+    ? '<div class="abtn rec" onclick="alert(\'M5 处方：本篇超基线 ' + ratio.toFixed(1) + ' 倍，48h 内复制结构发姊妹篇\')"><b>追加 ✓</b>姊妹篇<div class="why">超基线 ' + ratio.toFixed(1) + ' 倍</div></div>'
+    : '<div class="abtn" onclick="alert(\'M3 处方：先补强标题与出处，再考虑新篇\')"><b>追加</b>先补强<div class="why">' + (ratio < 1 ? '低于基线 ' + Math.round((1 - ratio) * 100) + '%' : '已过窗口') + '</div></div>';
+  acts += '<div class="abtn" onclick="alert(\'M7 处方：置顶高赞评论+结尾加具体问题（可干预动作；「20-22 点最佳」属待验证假设，请以自己历史数据为准）\')"><b>互动</b>置顶回复<div class="why">M7 可干预动作</div></div>';
+  acts += '<div class="abtn" onclick="alert(\'止损：持续低于基线即转复盘，不追加投入\')"><b>放弃</b>转入复盘<div class="why">低于基线 ' + (ratio < 1 ? Math.round((1 - ratio) * 100) + "%" : "0%") + '</div></div>';
   document.getElementById("d-acts").innerHTML = acts;
 }
 
 /* ============ 屏3：方法论校准（①诊断②处方③依据） ============ */
 function renderScreen3() {
-  loadReview(); fillActionOptions(); renderReview(); /* 复盘闭环随校准卡刷新（动作下拉来自当前命中集） */
-  var pct = (A.followers != null) ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
-  /* 修复「粉丝数不见了」：这块大字显示的是当前粉丝数（A.followers，含自定义口径），
-     目标值在右边「现在离目标多远」卡里已经有，不能拿 GOAL 顶替粉丝数 */
-  document.getElementById("g-goal").innerHTML = (A.followers != null)
-    ? '粉丝 <b style="color:var(--pri)">' + fmtN(A.followers) + '</b>'
-    : '粉丝 — <span class="tg est">缺失（不硬编）</span>';
-  var fTxt = A.followersKind === "api" ? " · 粉丝数为接口真实值"
-           : A.followersKind === "pub" ? " · 粉丝数来自公开主页数据"
-           : A.followersKind === "user" ? " · 粉丝数为你填写的自定义值（非平台数据）"
-           : A.followersKind === "demo" ? " · 粉丝数为合成演示值（非真实）"
-           : " · 粉丝口径缺失（不硬编）";
-  document.getElementById("g-who").innerHTML = '账号：<b>' + esc(A.name) + "</b>" + (A.headline ? " · " + esc(short(A.headline, 18)) : "") + fTxt;
+  var pct = A.followersReal ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
+  document.getElementById("g-goal").textContent = "粉丝 " + fmtN(GOAL);
+  document.getElementById("g-who").innerHTML = '账号：<b>' + esc(A.name) + "</b>" + (A.headline ? " · " + esc(short(A.headline, 18)) : "") + (A.followersReal ? " · 粉丝数为接口真实值" : " · 官方用户数据接口不含粉丝数字段（不硬编）");
   document.getElementById("g-align").innerHTML = pct != null
     ? '月度卡判定（M1）：目标进度 <b style="color:var(--pri)">' + pct + '%</b>' + (A.snaps.length >= 2 && A.growthPerDay != null ? " · 真实增速 " + (A.growthPerDay >= 0 ? "+" : "") + A.growthPerDay.toFixed(1) + " 粉/日" : " · 逐日增速需快照积累（已存 " + A.snaps.length + " 次）")
-    : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；可在首页填「我的粉丝数」（自定义口径）或用「方式二」公开抓取。';
+    : '月度卡判定（M1）：粉丝口径不可得——官方接口不含该字段，<b>不硬编</b>；请用「方式二」公开抓取或看演示数据体验目标对齐分';
 
-  document.getElementById("g-now").innerHTML = (A.followers != null ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
-  var fTgMap = { api: ["ok", "真实"], pub: ["ok", "公开数据"], user: ["est", "自定义"], demo: ["est", "合成"] };
-  var fTg = fTgMap[A.followersKind] || ["est", "缺失"];
-  document.getElementById("g-tgt").innerHTML = '目标 <b>' + fmtN(GOAL) + '</b> · <span class="tg ' + fTg[0] + '">' + fTg[1] + '</span>';
+  document.getElementById("g-now").innerHTML = (A.followersReal ? fmtN(A.followers) + " <b>" + pct + "%</b>" : "— <b>不可得</b>");
+  document.getElementById("g-tgt").innerHTML = '目标 <b>' + fmtN(GOAL) + '</b> · <span class="tg ' + (A.followersReal ? "ok" : "est") + '">' + (A.followersReal ? "真实" : "受限") + '</span>';
 
   var note;
   if (!A.followersReal) {
@@ -1858,34 +1619,28 @@ function renderScreen3() {
   document.getElementById("g-note").innerHTML = note;
 
   /* 方法过滤器 */
-  var mods = {}, MN = {};
-  MATCHED.forEach(function (x) { mods[x.m.module] = true; MN[x.m.module] = x.m.modName; });
+  var mods = {};
+  MATCHED.forEach(function (x) { mods[x.m.module] = true; });
   var tabs = document.getElementById("kbtabs");
-  var th = '<div class="kbt' + (kbFilter === "all" ? " on" : "") + '" role="button" tabindex="0" aria-label="筛选：全部方法" onclick="setKbFilter(\'all\')" onkeydown="kbKey(event, \'all\')">全部 ' + MATCHED.length + '</div>';
+  var th = '<div class="kbt' + (kbFilter === "all" ? " on" : "") + '" onclick="setKbFilter(\'all\')">全部 ' + MATCHED.length + '</div>';
   Object.keys(mods).sort().forEach(function (m) {
-    th += '<div class="kbt' + (kbFilter === m ? " on" : "") + '" role="button" tabindex="0" aria-label="筛选：' + esc(MN[m] || m) + '建议" onclick="setKbFilter(\'' + m + '\')" onkeydown="kbKey(event, \'' + m + '\')">' + esc(MN[m] || m) + ' ' + MATCHED.filter(function (x) { return x.m.module === m; }).length + '</div>';
+    th += '<div class="kbt' + (kbFilter === m ? " on" : "") + '" onclick="setKbFilter(\'' + m + '\')">' + m + ' ' + MATCHED.filter(function (x) { return x.m.module === m; }).length + '</div>';
   });
   KB_SHELL.forEach(function (s) {
-    th += '<div class="kbt" style="opacity:.5">' + (s.modName || s.module) + ' · 更多</div>';
+    th += '<div class="kbt" style="opacity:.5">' + s.module + ' · 后置</div>';
   });
   tabs.innerHTML = th;
-  document.getElementById("kb-count").textContent = "数据信号命中 " + MATCHED.length + " / " + KB.length + " 条内置信号";
-  var cov = MATCHED.filter(function (x) { return !!kbFind(x.m.id); }).length;
-  document.getElementById("kb-count").textContent += " · KB 索引覆盖 " + cov + "/" + MATCHED.length + "（已交付 " + KB_INDEX.length + " 张卡 · " + KB_INDEX_BUILT + " 生成）";
+  document.getElementById("kb-count").textContent = "数据信号命中 " + MATCHED.length + " / " + KB.length + " 条方法";
 
   /* 方法卡 */
   var list = document.getElementById("mlist2");
   var h = "";
-  /* WEB-10：优先级先对**完整候选集**固定（按命中分），筛选只影响可见性，不改优先级 */
-  var rankOf = {};
-  MATCHED.forEach(function (x, i) { rankOf[x.m.id] = i; });
   var shown = MATCHED.filter(function (x) { return kbFilter === "all" || x.m.module === kbFilter; });
   if (!shown.length) {
     h = '<div class="empty" style="padding:40px"><div class="t">当前过滤条件下没有命中方法</div><div class="d">切换到「全部」查看所有数据信号触发的方法。</div></div>';
   }
-  shown.forEach(function (x) {
+  shown.forEach(function (x, i) {
     var m = x.m, c = x.ctx;
-    var i = (rankOf[m.id] != null ? rankOf[m.id] : 99); /* 全量名次，非筛选后名次 */
     var cls = i === 0 ? "h1" : i === 1 ? "h2" : "h3";
     var rankTxt = i === 0 ? "优先级 P0 · 命中分 " + x.score : i === 1 ? "优先级 P1 · 命中分 " + x.score : "优先级 P2 · 命中分 " + x.score;
     h += '<div class="mcard ' + cls + '">';
@@ -1893,17 +1648,8 @@ function renderScreen3() {
     h += '<div class="mhead"><span class="mmod">' + m.module + " " + esc(m.modName) + '</span><span class="mname">' + esc(m.title) + '</span><span class="mtime">适用：' + esc(m.platform) + " · " + esc(m.stage) + '</span></div>';
     h += '<div class="row3 r1"><div class="no">①</div><div class="body"><div class="h">诊断</div><div class="t">' + m.diag(c, A) + '</div></div></div>';
     h += '<div class="row3 r2"><div class="no">②</div><div class="body"><div class="h">处方（' + m.rx(c, A).length + ' 个动作）</div><div class="t">' + m.rx(c, A).map(function (r, j) { return (j + 1) + ". " + r; }).join("<br>") + '</div></div></div>';
-    /* WEB-03：依据链接指向 kanshan-kb 仓库内的**真实文件路径**（KB_INDEX 生成自带），
-       不再按「标题猜文件名」——未收录时如实标注，不产出 404 链接 */
-    var kbIt = kbFind(m.id);
-    var kbLink = kbUrl(m.id);
-    var kbLine = kbLink
-      ? '方法：<a class="kbref" href="' + esc(kbLink) + '" target="_blank">' + esc(m.id) + ' ' + esc(kbIt.t) + '</a>' +
-        '（kanshan-kb · 路径 <code>' + esc(kbIt.p) + '</code> · 版本 ' + esc(kbIt.ver || "—") + '）' +
-        '<br><span class="tg est">证据等级：' + esc(kbIt.ev || "未标注") + '</span>' +
-        (kbIt.t !== m.title ? ' <span class="tg pri">⚠️ 页面内置标题与 KB 卡不一致（KB：' + esc(kbIt.t) + '）——以 KB 卡为准</span>' : '')
-      : '方法：<b>' + esc(m.id) + ' ' + esc(m.title) + '</b> <span class="tg est">KB 索引未收录该 ID（不在已交付的 ' + KB_INDEX.length + ' 张卡内）</span>';
-    h += '<div class="row3 r3"><div class="no">③</div><div class="body"><div class="h">依据（可证伪）</div><div class="t">' + kbLine + '<br>数据信号：<b>' + esc(m.signalDesc) + '</b> · 本次命中分 ' + x.score + '/100<br>知乎实证：' + esc(m.zhihu) + '</div></div></div>';
+    var mdUrl = KB_REPO + "/" + encodeURIComponent(m.module + "-" + (m.id || "").replace(/^M\d+-/, "") + "-" + (m.title || "").replace(/[\\/:*?"<>|]/g, "")) + ".md";
+    h += '<div class="row3 r3"><div class="no">③</div><div class="body"><div class="h">依据（可证伪）</div><div class="t">方法：<a class="kbref" href="' + esc(mdUrl) + '" target="_blank">' + esc(m.id) + ' ' + esc(m.modName) + '/' + esc(m.title) + '</a>（kanshan-kb 仓库）<br>数据信号：<b>' + esc(m.signalDesc) + '</b> · 本次命中分 ' + x.score + '/100<br>知乎实证：' + esc(m.zhihu) + '</div></div></div>';
     h += '<div class="sigbox">演示子集说明：本页内置方法与 kanshan-kb 仓库 md 格式兼容（type: method / 适用平台 / 适用阶段 / 数据信号），正式版直接读取仓库内容。</div>';
     h += '</div>';
   });
@@ -1911,99 +1657,6 @@ function renderScreen3() {
 }
 
 function setKbFilter(f) { kbFilter = f; renderScreen3(); }
-/* WEB-13：键盘可达——Enter/Space 触发与鼠标一致的行为，焦点可见 */
-function stepKey(e, s) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (s <= unlocked) goStep(s); } }
-function tierKey(e, t) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTier(t); } }
-function kbKey(e, f) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setKbFilter(f); } }
-
-/* ============ 目标卡（报告第 9 页：目标读者/专业定位/时间预算/截止日期）============ */
-var GOALCARD = { reader: "", position: "", budget: "", due: "" };
-function loadGoalCard() {
-  try { var s0 = localStorage.getItem("kanshan_goalcard"); if (s0) GOALCARD = JSON.parse(s0); } catch (e) { }
-  var f = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ""; };
-  f("gc-reader", GOALCARD.reader); f("gc-position", GOALCARD.position); f("gc-budget", GOALCARD.budget); f("gc-due", GOALCARD.due);
-  renderGoalCardBox();
-}
-function saveGoalCard() {
-  var g = function (id) { var el = document.getElementById(id); return el ? (el.value || "").trim() : ""; };
-  var budget = g("gc-budget");
-  if (budget && !/^[0-9]+(\.[0-9]+)?$/.test(budget)) { alert("时间预算请填数字（篇/周）"); return; }
-  GOALCARD = { reader: g("gc-reader"), position: g("gc-position"), budget: budget, due: g("gc-due") };
-  try { localStorage.setItem("kanshan_goalcard", JSON.stringify(GOALCARD)); } catch (e) { }
-  var h0 = document.getElementById("gc-hint");
-  if (h0) h0.textContent = "已保存（本地）。未填字段按「未设」处理，不硬编。";
-  renderGoalCardBox();
-}
-function daysTo(due) {
-  if (!due) return null;
-  var d = new Date(due + "T23:59:59").getTime() - Date.now();
-  return Math.ceil(d / 86400000);
-}
-function openGoalCard() {
-  var d0 = document.querySelector(".goalcard-input");
-  if (d0) { d0.open = true; d0.scrollIntoView({ behavior: "smooth", block: "center" }); }
-  var g0 = document.getElementById("gc-reader"); if (g0) g0.focus();
-}
-function renderGoalCardBox() {
-  var box = document.getElementById("goalcard-box"); if (!box) return;
-  var setLink = '<a class="gc-set" onclick="openGoalCard()" style="cursor:pointer;color:var(--pri);font-size:12px;margin-left:6px">去设置 →</a>';
-  var g = function (v) { return v ? esc(v) : '<span class="tg est">未设</span>'; };
-  var dl = daysTo(GOALCARD.due);
-  box.innerHTML =
-    '<div class="mrow"><div class="mk">目标读者</div><div class="mv">' + g(GOALCARD.reader) + (GOALCARD.reader ? "" : setLink) + '</div></div>' +
-    '<div class="mrow"><div class="mk">专业定位</div><div class="mv">' + g(GOALCARD.position) + (GOALCARD.position ? "" : setLink) + '</div></div>' +
-    '<div class="mrow"><div class="mk">时间预算</div><div class="mv">' + (GOALCARD.budget ? esc(GOALCARD.budget) + ' 篇/周' : '<span class="tg est">未设</span>' + setLink) + '</div></div>' +
-    '<div class="mrow"><div class="mk">截止日期</div><div class="mv">' + (GOALCARD.due ? esc(GOALCARD.due) + (dl != null ? '（剩 <b>' + dl + '</b> 天）' : '') : '<span class="tg est">未设</span>' + setLink) + '</div></div>';
-}
-
-/* ============ 复盘闭环（报告第 9 页：选动作→记改动与预期→到期补数判继续/停止）============ */
-var REVIEW = [];
-function reviewKey() { return "kanshan_review" + (A && A.id ? "_" + A.id : ""); }
-function loadReview() {
-  try { var s1 = localStorage.getItem(reviewKey()); REVIEW = s1 ? JSON.parse(s1) : []; } catch (e) { REVIEW = []; }
-}
-function saveReview() { try { localStorage.setItem(reviewKey(), JSON.stringify(REVIEW)); } catch (e) { } }
-function fillActionOptions() {
-  var sel = document.getElementById("rv-action"); if (!sel) return;
-  var opts = [];
-  (typeof MATCHED !== "undefined" ? MATCHED : []).forEach(function (x) {
-    try {
-      x.m.rx(x.ctx, A).forEach(function (r, j) { opts.push({ t: x.m.id + " · " + r, k: x.m.id + "#" + j }); });
-    } catch (e) { }
-  });
-  sel.innerHTML = opts.length
-    ? opts.map(function (o) { return '<option value="' + esc(o.k) + '">' + esc(short(o.t, 46)) + '</option>'; }).join("")
-    : '<option value="">（先完成分析，才有可选动作）</option>';
-}
-function addReview() {
-  var sel = document.getElementById("rv-action"), ch = document.getElementById("rv-change"), ex = document.getElementById("rv-expect"), du = document.getElementById("rv-due");
-  if (!sel || !sel.value) { alert("先完成分析并在下拉里选一个动作"); return; }
-  var action = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : sel.value;
-  var change = (ch && ch.value || "").trim(), expect = (ex && ex.value || "").trim(), due = (du && du.value || "");
-  if (!change || !expect) { alert("「我改了什么」和「我预期什么」都要填——这是复盘闭环的可验证前提"); return; }
-  REVIEW.unshift({ k: sel.value, action: action, change: change, expect: expect, due: due, created: timeStr(), verdict: "" });
-  saveReview(); renderReview(); if (ch) ch.value = ""; if (ex) ex.value = "";
-}
-function setVerdict(idx, v) { if (REVIEW[idx]) { REVIEW[idx].verdict = v; saveReview(); renderReview(); } }
-function delReview(idx) { REVIEW.splice(idx, 1); saveReview(); renderReview(); }
-function renderReview() {
-  var box = document.getElementById("rv-list"); if (!box) return;
-  if (!REVIEW.length) { box.innerHTML = '<span style="color:var(--text-3)">还没有复盘条目。选一个动作 → 写清改动与预期 → 到期补数后判断「继续 / 停止」。</span>'; return; }
-  box.innerHTML = REVIEW.map(function (r, i) {
-    var dl = daysTo(r.due);
-    var st = r.verdict ? '<span class="tg ok">结论：' + esc(r.verdict) + '</span>'
-      : (dl == null ? '<span class="tg est">未设复判日期</span>'
-        : (dl > 0 ? '<span class="tg est">未到期（剩 ' + dl + ' 天）</span>' : '<span class="tg pri">已到复判日——补数后判断</span>'));
-    var btns = r.verdict ? ''
-      : '<button class="secondarybtn" style="padding:2px 10px;margin-left:6px" onclick="setVerdict(' + i + ',\'继续\')">判继续</button>' +
-        '<button class="secondarybtn" style="padding:2px 10px;margin-left:4px" onclick="setVerdict(' + i + ',\'停止\')">判停止</button>';
-    return '<div style="border-top:1px dashed var(--border);padding:8px 0">' +
-      '<div><b>' + esc(short(r.action, 60)) + '</b> ' + st + btns +
-      '<a style="color:var(--text-3);margin-left:8px;cursor:pointer" onclick="delReview(' + i + ')">删除</a></div>' +
-      '<div style="color:var(--text-3);font-size:12px">改动：' + esc(r.change) + ' · 预期：' + esc(r.expect) + ' · 记录于 ' + esc(r.created) + (r.due ? ' · 复判 ' + esc(r.due) : '') + '</div>' +
-      '</div>';
-  }).join("");
-}
 
 /* ============ 诊断弹窗 ============ */
 var TYPS = { answer: "Answer", article: "Article", pin: "Pin 想法", zvideo: "ZVideo 视频", question: "Question" };
@@ -2082,9 +1735,8 @@ function setTier(t) {
 
 /* ============ 兜底 ============ */
 var BTXT = {
-  /* WEB-09：故障态是**模拟演示**，不是真实故障/真实缓存——文案如实标注，不冒充 */
-  apiError: { icon: "⚠️", text: "【模拟故障】公开接口失败场景演示——正在展示演示数据（非实时、非真实缓存）", retry: true },
-  quota: { icon: "⏳", text: "【模拟故障】额度用完场景演示——展示演示数据（非真实缓存命中）", retry: false }
+  apiError: { icon: "⚠️", text: "公开接口暂时失败，正在展示演示数据（非实时）", retry: true },
+  quota: { icon: "⏳", text: "今日抓取额度已用完，展示缓存数据", retry: false }
 };
 function setMode(m) {
   mode = m;
@@ -2100,13 +1752,6 @@ function setMode(m) {
   document.querySelectorAll(".tbtn").forEach(function (b) { b.classList.toggle("on", b.dataset.tier === "m"); });
   document.getElementById("tier-tag").textContent = TIER_TXT.m;
   empty.style.display = "none";
-  /* WEB-09：切到任何非正常态时，作废依赖数据的分析结论（重新锁回第一步），
-     避免「先解锁第三步 → 再切空数据 → 仍能翻到旧诊断」的状态不一致 */
-  if (m !== "ok") {
-    unlocked = 1;
-    var kbl = document.getElementById("kblist");
-    if (kbl) kbl.innerHTML = "";
-  }
   if (m === "empty") {
     showIds.forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = "none"; });
     empty.style.display = "block";
@@ -2160,7 +1805,7 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
         if (txt) {
           txt.textContent = REMOTE_HOST
             ? "引擎 ✓ " + VER + " · 在线演示版（数据读取需本机网关版；当前可直接体验演示数据）"
-            : "引擎 ✓ " + VER + " · 本地网关未启动（双击本工具目录里的 启动.bat，即可连官方 API / 公开抓取；现在可用演示数据）";
+            : "引擎 ✓ " + VER + " · 本地网关未启动（双击 frontend 文件夹里的 启动.bat，即可连官方 API / 公开抓取；现在可用演示数据）";
           txt.style.color = "var(--warn)";
         }
       });
@@ -2170,75 +1815,6 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
   if (btn && !btn.getAttribute("onclick") && typeof startOfficial === "function") {
     btn.addEventListener("click", startOfficial);
   }
-  /* 首页极简视图切换：main=只看主按钮；adv=只看进阶卡（抓其他账号） */
-  window.showHome = function (view) {
-    var m = document.getElementById("card-main");
-    var a = document.getElementById("card-adv");
-    if (!m || !a) return;
-    var hideMain = (view === "adv");
-    m.classList.toggle("home-hide", hideMain);
-    a.classList.toggle("home-hide", !hideMain);
-    var grid = document.querySelector(".entry-grid");
-    if (grid) {
-      grid.classList.toggle("adv-full", hideMain);
-      grid.classList.toggle("solo", !hideMain); /* 主视图：主卡居中+拉长间距 */
-    }
-    try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
-  };
-  async function startOauth() {
-    var ferr = document.getElementById("ferr");
-    if (ferr) ferr.classList.remove("show");
-    try {
-      var r0 = await fetch("/api/oauth/status");
-      var st = await r0.json();
-      if (st.authorized) {
-        var nm = st.profile && st.profile.name ? st.profile.name : "知乎账号";
-        if (ferr) { ferr.innerHTML = "已授权：<b>" + esc(nm) + "</b>——可再次点击切换账号或重新授权。"; ferr.classList.add("show"); }
-        return;
-      }
-      if (!st.configured) {
-        if (ferr) { ferr.innerHTML = "OAuth 凭证未配置：oauth.credentials.local 缺失或字段不全（本机网关侧问题）。"; ferr.classList.add("show"); }
-        return;
-      }
-      var r = await fetch("/api/oauth/url");
-      var j = await r.json();
-      if (!j.ok) { if (ferr) { ferr.innerHTML = esc(j.error || "暂无法发起授权"); ferr.classList.add("show"); } return; }
-      window.location.href = j.url;
-    } catch (e) {
-      if (ferr) { ferr.innerHTML = "本地网关未启动：请先双击 启动.bat（演示数据不受影响）。"; ferr.classList.add("show"); }
-    }
-  }
-  window.startOauth = startOauth;
-  /* 粉丝自动补：官方接口不含粉丝字段——用本机存的知乎 ID 走公开主页补（口径「公开数据」） */
-  function maybeAutoFans() {
-    if (!A || A.followers != null || A.source !== "official") return;
-    var myid = localStorage.getItem("kanshan_myid");
-    if (!myid) return;
-    fetchCliPublic(myid, 1).then(function (j) {
-      var prof = j && j.profile ? j.profile : null;
-      if (prof && typeof prof.follower_count === "number" && A && A.followers == null) {
-        A.followers = prof.follower_count;
-        A.followersKind = "pub";
-        renderAll();
-      }
-    }).catch(function () { });
-  }
-  window.maybeAutoFans = maybeAutoFans;
-  var myidEl = document.getElementById("umyid");
-  if (myidEl) {
-    try { myidEl.value = localStorage.getItem("kanshan_myid") || ""; } catch (e) { }
-    myidEl.addEventListener("change", function () {
-      try { localStorage.setItem("kanshan_myid", myidEl.value.trim()); } catch (e) { }
-    });
-  }
-  /* 启动初始化：目标卡 + 复盘闭环（本地持久化） */
-  try { loadGoalCard(); } catch (e) { }
-  try { showHome(localStorage.getItem("kanshan_homeview") || "main"); } catch (e) { showHome("main"); }
-  try { var _g0 = document.querySelector(".entry-grid"); if (_g0 && !_g0.classList.contains("adv-full")) _g0.classList.add("solo"); } catch (e) { }
-  try { loadReview(); fillActionOptions(); renderReview(); } catch (e) { }
-  try { fetch("/api/oauth/status").then(function (r) { return r.json(); }).then(function (st) {
-    if (st.authorized) { var b = document.getElementById("oauthbtn"); if (b) b.textContent = "已授权：" + (st.profile && st.profile.name ? st.profile.name : "知乎账号") + " · 重新授权"; }
-  }); } catch (e) { }
   var pb = document.getElementById("pubbtn");
   if (pb && !pb.getAttribute("onclick") && typeof startFetch === "function") {
     pb.addEventListener("click", startFetch);

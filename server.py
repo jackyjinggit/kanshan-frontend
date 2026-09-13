@@ -784,6 +784,15 @@ if __name__ == "__main__":
     print("  保持本窗口开着（关闭 = 停止服务）")
     print("=" * 52)
     try:
+        # OAuth 回调端口跟随 redirect_uri（若与主端口不同，额外加开一条监听专收回调）
+        try:
+            _cbp = urllib.parse.urlparse(OAUTH_REDIRECT_URI).port
+        except Exception:
+            _cbp = None
+        if oauth_configured() and _cbp and _cbp != PORT:
+            import threading
+            threading.Thread(target=lambda: ThreadingHTTPServer(("127.0.0.1", _cbp), Handler).serve_forever(), daemon=True).start()
+            print("  OAuth 回调监听已加开：http://127.0.0.1:%d/oauth/callback" % _cbp)
         httpd = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
         print("  服务已启动 ✓  http://localhost:%d/" % PORT)
         try:
