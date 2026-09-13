@@ -66,6 +66,12 @@
   .banner.warn { background: var(--warn-soft); border: 1px solid #ffd6ad; color: #a65300; }
 
   .screen { display: none; padding-top: 40px; }
+  /* 首页改版：主卡强调 / 大按钮 / 进阶卡次级按钮 */
+  .entry-card.primary-entry { border: 2px solid var(--pri); box-shadow: 0 4px 18px rgba(0,0,0,.06); }
+  .entry-card.primary-entry .entry-eyebrow { color: var(--pri); font-weight: 700; }
+  .authbtn.big { width: 100%; font-size: 17px; padding: 14px 28px; margin-top: 4px; }
+  .authbtn.ghost { background: var(--panel2, #f2f6fa); color: var(--fg); border: 1px solid var(--border); }
+  .authbtn.ghost:hover { border-color: var(--pri); color: var(--pri); }
   /* WEB-13：键盘焦点可见 */
   .step:focus-visible, .tbtn:focus-visible, .kbt:focus-visible, .tl-node:focus-visible { outline: 3px solid var(--pri); outline-offset: 2px; border-radius: 6px; }
   .screen.current { display: block; animation: fadein .3s; }
@@ -428,46 +434,49 @@
     </div>
 
     <div class="entry-grid">
-      <div class="entry-card official-entry">
-        <div class="entry-eyebrow">方式一 · 我的账号</div>
-        <div class="entry-title">授权读取我的创作数据</div>
-        <div class="entry-desc">走知乎官方开放平台 API。只读取当前授权账号的创作内容，Access Secret 只留在本机网关。</div>
-        <button class="authbtn" id="authbtn" onclick="startOfficial()">一键读取并生成轨迹 →</button>
-        <div class="entry-foot">适合：已有 Access Secret 的账号 · 不需要先经过额外页面</div>
+      <!-- 主路径：我的账号（一个大按钮，粉丝自定义与目标卡都在这里） -->
+      <div class="entry-card primary-entry">
+        <div class="entry-eyebrow">推荐 · 我的账号</div>
+        <div class="entry-title">一键读取并生成轨迹</div>
+        <div class="entry-desc">走知乎官方开放平台 API，只读取当前授权账号的创作内容；Access Secret 只留本机网关。</div>
+        <div class="flow-row">
+          <input class="uinput small" id="ufans" placeholder="粉丝数（可选·自定义口径）" inputmode="numeric" title="官方接口不含粉丝字段——填了就按你填的数算目标进度，口径标为「自定义」；不填不硬编">
+          <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
+        </div>
+        <button class="authbtn big" id="authbtn" onclick="startOfficial()">开始分析我的账号 →</button>
+        <!-- 目标卡（报告第 9 页要求）：目标对齐分需要「明确目标读者、专业定位、时间预算和截止日期」才有锚点 -->
+        <details class="goalcard-input" style="margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--panel2,#f7f9fb)">
+          <summary style="cursor:pointer;font-weight:700;font-size:13px">目标卡（可选，填了目标对齐分才有锚点）▾</summary>
+          <div class="flow-row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
+            <input class="uinput small" id="gc-reader" placeholder="目标读者（如：想入行的应届生）" style="min-width:200px">
+            <input class="uinput small" id="gc-position" placeholder="专业定位（如：AI 治理观察者）" style="min-width:200px">
+            <input class="uinput small" id="gc-budget" placeholder="时间预算（篇/周，如 4）" inputmode="numeric" style="min-width:150px">
+            <input class="uinput small" id="gc-due" type="date" title="截止日期（6 个月目标到期日）" style="min-width:150px">
+            <button class="secondarybtn" onclick="saveGoalCard()">保存目标卡</button>
+          </div>
+          <div class="flow-row" style="font-size:12px;color:var(--text-3);margin-top:6px" id="gc-hint">留空的字段按「未设」处理，不硬编。</div>
+        </details>
+        <div class="entry-foot">适合：分析自己的账号 · 两个数字都可以留空，留空不硬编</div>
       </div>
 
+      <!-- 进阶：抓取其他账号 -->
       <div class="entry-card cli-entry">
-        <div class="entry-eyebrow">方式二 · 公开账号</div>
-        <div class="entry-title">用知乎 CLI 抓取并分析</div>
-        <div class="entry-desc">优先调用官方 <b>zhihu-cli search zhihu</b>，再按 people ID 抓取对应公开主页、回答和文章，分析完成后自动返回第二屏。</div>
-        <label class="field-label" for="uid">知乎 ID 或主页链接</label>
+        <div class="entry-eyebrow">进阶 · 抓取其他账号</div>
+        <div class="entry-title">分析任意公开账号</div>
+        <div class="entry-desc">输入对方的知乎 ID 或主页链接，走官方 CLI + 公开接口抓取公开回答与文章（无需对方授权）。</div>
+        <label class="field-label" for="uid">对方的知乎 ID 或主页链接</label>
         <input class="uinput small" id="uid" placeholder="如 zhang-jia-wei 或 https://www.zhihu.com/people/..." autocomplete="off">
-        <div class="flow-row">
-          <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
-          <input class="uinput small" id="ufans" placeholder="我的粉丝数（可选·自定义口径）" inputmode="numeric" title="填了就按你填的数算目标进度，口径标为「自定义」；不填则按抓取/演示值">
-          <button class="authbtn" id="pubbtn" onclick="startFetch()">CLI 抓取 →</button>
-        </div>
+        <button class="authbtn ghost" id="pubbtn" onclick="startFetch()">抓取该账号 →</button>
         <div class="entry-foot" id="cliHint">CLI 可用时走官方搜索；账号列表由公开接口精确补齐。CLI 未安装/未授权时会明确提示并自动走公开数据兜底。</div>
-        <div class="ferr" id="ferr"></div>
       </div>
     </div>
+    <!-- 共享错误条：主路径 / 进阶路径的输入校验错误都显示在这里 -->
+    <div class="ferr" id="ferr"></div>
 
     <div class="quick-actions">
       <button class="secondarybtn" onclick="startDemo()">先看演示数据</button>
       <span>演示数据只用于体验，不代表真实账号</span>
     </div>
-    <!-- 目标卡（报告第 9 页要求）：目标对齐分需要「明确目标读者、专业定位、时间预算和截止日期」才有锚点 -->
-    <details class="goalcard-input" style="margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--panel2,#f7f9fb)">
-      <summary style="cursor:pointer;font-weight:700;font-size:13px">目标卡（可选，填了目标对齐分才有锚点）▾</summary>
-      <div class="flow-row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
-        <input class="uinput small" id="gc-reader" placeholder="目标读者（如：想入行的应届生）" style="min-width:200px">
-        <input class="uinput small" id="gc-position" placeholder="专业定位（如：AI 治理观察者）" style="min-width:200px">
-        <input class="uinput small" id="gc-budget" placeholder="时间预算（篇/周，如 4）" inputmode="numeric" style="min-width:150px">
-        <input class="uinput small" id="gc-due" type="date" title="截止日期（6 个月目标到期日）" style="min-width:150px">
-        <button class="secondarybtn" onclick="saveGoalCard()">保存目标卡</button>
-      </div>
-      <div class="flow-row" style="font-size:12px;color:var(--text-3);margin-top:6px" id="gc-hint">留空的字段按「未设」处理，不硬编。</div>
-    </details>
     <div class="flow-note">方法论正式源：<b>kanshan-kb</b>（M1-M10）。每条输出都保留「真实 / 推导 / 估算」标签；不知道的字段不硬编。</div>
   </section>
 
@@ -1074,6 +1083,19 @@ function startOfficial() {
   try {
   var ferr = document.getElementById("ferr");
   if (ferr) ferr.classList.remove("show");
+  /* 主路径同样支持自定义粉丝数/目标（WEB-11：失败不提交无效值） */
+  var g = parseGoal(document.getElementById("ugoal") ? document.getElementById("ugoal").value : "");
+  if (isNaN(g)) {
+    if (ferr) { ferr.innerHTML = "粉丝目标必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。"; ferr.classList.add("show"); }
+    return;
+  }
+  GOAL = g;
+  var fv = parseFans(document.getElementById("ufans") ? document.getElementById("ufans").value : "");
+  if (isNaN(fv)) {
+    if (ferr) { ferr.innerHTML = "粉丝数必须是正整数（1 ~ 100,000,000）：不接受负数、0、小数或夹杂文字的输入。留空表示不用自定义口径。"; ferr.classList.add("show"); }
+    return;
+  }
+  MY_FANS = fv;
   setLoadingButtons(true, false);
   resetLoadState();
   goStep(0);
