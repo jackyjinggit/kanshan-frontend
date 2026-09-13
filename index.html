@@ -75,6 +75,9 @@
   /* 首页极简视图切换：主视图只显示主卡；进阶视图只显示进阶卡 */
   .home-hide { display: none !important; }
   a.adv-entry-link:focus-visible { outline: 2px solid var(--pri); border-radius: 4px; }
+  .adv-entry-row { text-align: right; margin: 12px 2px 0; }
+  .adv-entry-row a { cursor: pointer; color: var(--text-2); font-size: 13px; border-bottom: 1px dashed var(--border-hi); padding-bottom: 2px; }
+  .adv-entry-row a:hover { color: var(--pri); border-color: var(--pri); }
   /* 进阶视图：标题压扁一行置顶，抓取表单展开占满下方 */
   .entry-grid.adv-full { display: block; max-width: none; }
   .entry-grid.adv-full .cli-entry { min-height: calc(100vh - 330px); display: flex; flex-direction: column; }
@@ -101,10 +104,12 @@
   .tg.demo { background: var(--low-soft); color: var(--low); }
   .tg.pri { background: var(--pri-soft); color: var(--pri); }
 
-  .hero { text-align: center; margin-bottom: 26px; }
-  .hero .mtn { font-size: 30px; letter-spacing: -5px; color: var(--pri); }
+  .hero { text-align: center; margin-bottom: 36px; padding-top: 30px; position: relative; }
+  .hero .mtn-l, .hero .mtn-r { position: absolute; top: -4px; font-size: 20px; letter-spacing: -2px; color: var(--pri); opacity: .5; }
+  .hero .mtn-l { left: 1%; }
+  .hero .mtn-r { right: 1%; }
   .hero-kicker { color: var(--pri); font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-top: 9px; }
-  .hero h1 { font-size: 25px; font-weight: 800; margin: 6px 0 8px; }
+  .hero h1 { font-size: 25px; font-weight: 800; margin: 12px 0 14px; }
   .hero p { color: var(--text-2); font-size: 14px; line-height: 1.7; }
   .hero p b { color: var(--pri); }
 
@@ -436,7 +441,7 @@
   <!-- ============ 屏1：最短进入路径 ============ -->
   <section class="screen current" id="scr1">
     <div class="hero">
-      <div class="mtn">▲ ▲ ▲</div>
+      <span class="mtn-l">▲▲▲</span><span class="mtn-r">▲▲▲</span>
       <div class="hero-kicker">知乎创作者 · 数据校准</div>
       <h1>先看清轨迹，再决定下一步</h1>
       <p>抓取公开内容 → 本地计算基线 → 输出<b>诊断 + 处方 + 依据</b><br>失败不会白屏，错误会留在页面上，随时可以回到输入。</p>
@@ -488,10 +493,11 @@
     <!-- 共享错误条：主路径 / 进阶路径的输入校验错误都显示在这里 -->
     <div class="ferr" id="ferr"></div>
 
-    <div class="quick-actions" style="display:flex;align-items:center">
+    <!-- 进阶入口：独立一行（上下铺开），不再挤在左下角 -->
+    <div class="adv-entry-row"><a onclick="showHome('adv')">进阶 · 分析其他账号（输入对方知乎 ID）→</a></div>
+    <div class="quick-actions">
       <button class="secondarybtn" onclick="startDemo()">先看演示数据</button>
       <span>演示数据只用于体验，不代表真实账号</span>
-      <a onclick="showHome('adv')" style="margin-left:auto;cursor:pointer;font-size:13px;color:var(--text-3);border-bottom:1px dashed var(--border)">进阶 · 分析其他账号 →</a>
     </div>
     <div class="flow-note">方法论正式源：<b>kanshan-kb</b>（M1-M10）。每条输出都保留「真实 / 推导 / 估算」标签；不知道的字段不硬编。</div>
   </section>
@@ -1780,7 +1786,11 @@ function renderDayView() {
 function renderScreen3() {
   loadReview(); fillActionOptions(); renderReview(); /* 复盘闭环随校准卡刷新（动作下拉来自当前命中集） */
   var pct = (A.followers != null) ? Math.min(100, Math.round(A.followers / GOAL * 100)) : null;
-  document.getElementById("g-goal").textContent = "粉丝 " + fmtN(GOAL);
+  /* 修复「粉丝数不见了」：这块大字显示的是当前粉丝数（A.followers，含自定义口径），
+     目标值在右边「现在离目标多远」卡里已经有，不能拿 GOAL 顶替粉丝数 */
+  document.getElementById("g-goal").innerHTML = (A.followers != null)
+    ? '粉丝 <b style="color:var(--pri)">' + fmtN(A.followers) + '</b>'
+    : '粉丝 — <span class="tg est">缺失（不硬编）</span>';
   var fTxt = A.followersKind === "api" ? " · 粉丝数为接口真实值"
            : A.followersKind === "user" ? " · 粉丝数为你填写的自定义值（非平台数据）"
            : A.followersKind === "demo" ? " · 粉丝数为合成演示值（非真实）"
