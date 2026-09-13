@@ -470,6 +470,7 @@
           <input class="uinput small" id="ugoal" placeholder="粉丝目标（默认 10000）" inputmode="numeric">
         </div>
         <button class="authbtn big" id="authbtn" onclick="startOfficial()">开始分析我的账号 →</button>
+        <button class="secondarybtn" id="oauthbtn" onclick="startOauth()" style="width:100%;margin-top:10px" title="跳转知乎官方授权页，只读你的创作数据；token 只留本机内存">用知乎账号登录（官方授权 · 只读）</button>
         <!-- 目标卡（报告第 9 页要求）：目标对齐分需要「明确目标读者、专业定位、时间预算和截止日期」才有锚点 -->
         <details class="goalcard-input" style="margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--panel2,#f7f9fb)">
           <summary style="cursor:pointer;font-weight:700;font-size:13px">目标卡（可选，填了目标对齐分才有锚点）▾</summary>
@@ -2147,11 +2148,38 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
     }
     try { localStorage.setItem("kanshan_homeview", view); } catch (e) { }
   };
+  async function startOauth() {
+    var ferr = document.getElementById("ferr");
+    if (ferr) ferr.classList.remove("show");
+    try {
+      var r0 = await fetch("/api/oauth/status");
+      var st = await r0.json();
+      if (st.authorized) {
+        var nm = st.profile && st.profile.name ? st.profile.name : "知乎账号";
+        if (ferr) { ferr.innerHTML = "已授权：<b>" + esc(nm) + "</b>——可再次点击切换账号或重新授权。"; ferr.classList.add("show"); }
+        return;
+      }
+      if (!st.configured) {
+        if (ferr) { ferr.innerHTML = "OAuth 凭证未配置：oauth.credentials.local 缺失或字段不全（本机网关侧问题）。"; ferr.classList.add("show"); }
+        return;
+      }
+      var r = await fetch("/api/oauth/url");
+      var j = await r.json();
+      if (!j.ok) { if (ferr) { ferr.innerHTML = esc(j.error || "暂无法发起授权"); ferr.classList.add("show"); } return; }
+      window.location.href = j.url;
+    } catch (e) {
+      if (ferr) { ferr.innerHTML = "本地网关未启动：请先双击 启动.bat（演示数据不受影响）。"; ferr.classList.add("show"); }
+    }
+  }
+  window.startOauth = startOauth;
   /* 启动初始化：目标卡 + 复盘闭环（本地持久化） */
   try { loadGoalCard(); } catch (e) { }
   try { showHome(localStorage.getItem("kanshan_homeview") || "main"); } catch (e) { showHome("main"); }
   try { var _g0 = document.querySelector(".entry-grid"); if (_g0 && !_g0.classList.contains("adv-full")) _g0.classList.add("solo"); } catch (e) { }
   try { loadReview(); fillActionOptions(); renderReview(); } catch (e) { }
+  try { fetch("/api/oauth/status").then(function (r) { return r.json(); }).then(function (st) {
+    if (st.authorized) { var b = document.getElementById("oauthbtn"); if (b) b.textContent = "已授权：" + (st.profile && st.profile.name ? st.profile.name : "知乎账号") + " · 重新授权"; }
+  }); } catch (e) { }
   var pb = document.getElementById("pubbtn");
   if (pb && !pb.getAttribute("onclick") && typeof startFetch === "function") {
     pb.addEventListener("click", startFetch);

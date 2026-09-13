@@ -57,6 +57,86 @@ def load_secret():
 SECRET = load_secret()
 
 
+# ---- OAuth（知乎开放平台 · 授权登录 · 协议照官方 hello-world-oauth 参考实现）----
+OAUTH_APP_ID = os.environ.get("ZHIHU_OAUTH_APP_ID", "").strip()
+OAUTH_APP_KEY = os.environ.get("ZHIHU_OAUTH_APP_KEY", "").strip()
+OAUTH_REDIRECT_URI = os.environ.get("ZHIHU_OAUTH_REDIRECT_URI", "").strip()
+_OAUTH_CRED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "oauth.credentials.local")
+if os.path.exists(_OAUTH_CRED_FILE):
+    try:
+        with open(_OAUTH_CRED_FILE, encoding="utf-8") as _f:
+            _c = json.load(_f)
+        OAUTH_APP_ID = OAUTH_APP_ID or str(_c.get("app_id", "")).strip()
+        OAUTH_APP_KEY = OAUTH_APP_KEY or str(_c.get("app_key", "")).strip()
+        OAUTH_REDIRECT_URI = OAUTH_REDIRECT_URI or str(_c.get("redirect_uri", "")).strip()
+    except Exception:
+        pass
+if not OAUTH_REDIRECT_URI:
+    OAUTH_REDIRECT_URI = "http://127.0.0.1:%d/oauth/callback" % PORT
+OAUTH_STATE = {"value": None}
+OAUTH_TOKEN = {"value": None, "expires": None, "profile": None}
+
+def oauth_configured():
+    return bool(OAUTH_APP_ID and OAUTH_APP_KEY and OAUTH_REDIRECT_URI)
+
+def oauth_status_payload():
+    return {
+        "ok": True,
+        "configured": oauth_configured(),
+        "appId": OAUTH_APP_ID,
+        "redirectUri": OAUTH_REDIRECT_URI,
+        "authorized": bool(OAUTH_TOKEN["value"]),
+        "profile": OAUTH_TOKEN["profile"],
+        "note": ("已授权" if OAUTH_TOKEN["value"] else
+                 "未授权——点「用知乎账号登录」完成授权；回调需与开放平台登记一致"),
+    }
+
+def _oauth_safe(v):
+    if not v or re.search(r"[\r\n\"\\]", v):
+        raise ValueError("凭证格式无效")
+    return v
+
+def _oauth_exchange(code):
+    """code 换 access_token（POST openapi.zhihu.com/access_token，form-urlencoded）"""
+    form = urllib.parse.urlencode({
+        "app_id": OAUTH_APP_ID,
+        "app_key": _oauth_safe(OAUTH_APP_KEY),
+        "grant_type": "authorization_code",
+        "redirect_uri": OAUTH_REDIRECT_URI,
+        "code": _oauth_safe(code),
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://openapi.zhihu.com/access_token", data=form, method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+def _oauth_profile(oauth_token):
+    """双头鉴权取用户公开信息：Secret 头 + X-OAuth-Token 头"""
+    req = urllib.request.Request(
+        "https://openapi.zhihu.com/user", method="GET",
+        headers={
+            "Authorization": "Bearer " + SECRET,
+            "X-OAuth-Token": _oauth_safe(oauth_token),
+            "X-Request-Timestamp": str(int(time.time())),
+            "Content-Type": "application/json",
+        })
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            payload = json.loads(r.read().decode("utf-8"))
+        src = payload.get("data") or payload.get("Data") or payload.get("user") or {}
+        if not isinstance(src, dict):
+            return None
+        return {
+            "name": src.get("name") or src.get("Fullname") or None,
+            "avatarUrl": src.get("avatar_url") or src.get("AvatarUrl") or None,
+            "headline": src.get("headline") or src.get("Headline") or None,
+            "url": src.get("url") or src.get("Url") or None,
+        }
+    except Exception:
+        return None
+
+
 def find_cli():
     """定位官方 zhihu-cli，不依赖 PATH，也不把凭证交给浏览器。"""
     candidates = []
@@ -459,6 +539,51 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # 静默日志
 
+    # ---- OAuth 回调落地页（服务端渲染，简单直接）----
+    def _oauth_callback_page(self, q):
+        def page(body_html, status_icon):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(("""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>看山 · 授权结果</title></head>
+<body style="font-family:system-ui,'Microsoft YaHei',sans-serif;background:#0b1b2b;color:#e8f1fa;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="max-width:520px;text-align:center;padding:40px 28px;background:#12283d;border-radius:16px">
+<div style="font-size:34px">""" + status_icon + """</div>""" + body_html + """
+<p style="margin-top:26px"><a href="/" style="color:#5aa9ff">← 回到看山首页</a></p>
+</div></body></html>""").encode("utf-8"))
+
+        def fail(msg):
+            page('<h2 style="margin:8px 0">授权未完成</h2><p style="color:#9fb4c7;line-height:1.7">' + msg + '</p>', "⚠️")
+
+        try:
+            if not oauth_configured():
+                return fail("OAuth 凭证未配置：oauth.credentials.local 缺失或字段不全。")
+            code = (q.get("authorization_code") or q.get("code") or [""])[0]
+            if not code:
+                err = (q.get("error") or ["授权被取消"])[0]
+                return fail("知乎返回：" + str(err)[:120])
+            state = (q.get("state") or [None])[0]
+            if state and OAUTH_STATE["value"] and state != OAUTH_STATE["value"]:
+                return fail("state 校验失败——请从看山首页重新发起授权。")
+            payload = _oauth_exchange(code)
+            token = payload.get("access_token") or (payload.get("data") or {}).get("access_token") if isinstance(payload, dict) else None
+            if not token:
+                msg = str(payload)[:160] if not isinstance(payload, dict) else str(payload.get("message") or payload.get("error") or payload)[:160]
+                return fail("未获得 access token：" + msg)
+            import time as _t
+            expires = payload.get("expires_in")
+            OAUTH_TOKEN["value"] = token
+            OAUTH_TOKEN["expires"] = (int(_t.time()) + int(expires) * 1000) if str(expires).isdigit() else None
+            OAUTH_TOKEN["profile"] = _oauth_profile(token)
+            prof = OAUTH_TOKEN["profile"] or {}
+            who = prof.get("name") or "知乎用户"
+            avatar = ('<img src="' + str(prof.get("avatarUrl")) + '" style="width:64px;height:64px;border-radius:50%">') if prof.get("avatarUrl") else ""
+            page(avatar + '<h2 style="margin:10px 0">授权成功</h2><p style="color:#9fb4c7">已连接：' + who +
+                 '</p><p style="color:#9fb4c7;font-size:13px">回看山首页即可开始分析；授权 token 只存在本机内存，不上传。</p>', "✅")
+        except Exception as exc:
+            fail("授权处理异常：" + str(exc)[:180])
+
     def _send(self, code, body, ctype="application/json; charset=utf-8"):
         if isinstance(body, str):
             body = body.encode("utf-8")
@@ -495,6 +620,21 @@ class Handler(BaseHTTPRequestHandler):
                     "mode": "official-search-bridge",
                 },
             }, ensure_ascii=False))
+
+        # ---- OAuth（授权登录 · 官方开放平台）----
+        if path == "/api/oauth/status":
+            return self._send(200, json.dumps(oauth_status_payload(), ensure_ascii=False))
+        if path == "/api/oauth/url":
+            if not oauth_configured():
+                return self._send(200, json.dumps({"ok": False, "error": "OAuth 凭证未配置（oauth.credentials.local 缺失或字段不全）"}, ensure_ascii=False))
+            import secrets as _sec
+            OAUTH_STATE["value"] = _sec.token_urlsafe(24)
+            u = ("https://openapi.zhihu.com/authorize?redirect_uri=" + urllib.parse.quote(OAUTH_REDIRECT_URI, safe="")
+                 + "&app_id=" + urllib.parse.quote(OAUTH_APP_ID)
+                 + "&response_type=code&state=" + OAUTH_STATE["value"])
+            return self._send(200, json.dumps({"ok": True, "url": u}, ensure_ascii=False))
+        if path == "/oauth/callback":
+            return self._oauth_callback_page(q)
 
         # ---- 官方 API：本人创作内容 ----
         if path == "/api/me/contents":
