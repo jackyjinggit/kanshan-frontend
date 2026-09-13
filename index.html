@@ -1494,6 +1494,11 @@ function renderSrcBadges() {
     h += evBadge();
   } else {
     h += '<span class="tg demo">演示数据（非真实）· 手动体验</span>';
+    /* 粉丝口径徽标：demo 分支同样要显示（WEB-08：来源与可得性各卡一致，不能只在详情里出现） */
+    if (A.followersKind === "api") h += '<span class="tg ok">粉丝 ' + fmtN(A.followers) + '（真实）</span>';
+    else if (A.followersKind === "user") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（自定义）</span>';
+    else if (A.followersKind === "demo") h += '<span class="tg est">粉丝 ' + fmtN(A.followers) + '（合成演示）</span>';
+    else h += '<span class="tg est">粉丝 缺失（不硬编）</span>';
     h += evBadge();
   }
   /* WEB-02：显式标「分析截至时间」＝最新一篇的发布日，让「断更 N 天」的基准可核对，
