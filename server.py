@@ -109,7 +109,11 @@ def _oauth_exchange(code):
         "https://openapi.zhihu.com/access_token", data=form, method="POST",
         headers={"Content-Type": "application/x-www-form-urlencoded"})
     with urllib.request.urlopen(req, timeout=20) as r:
-        return json.loads(r.read().decode("utf-8"))
+        raw = r.read().decode("utf-8")
+    try:
+        return json.loads(raw)
+    except Exception:
+        raise ValueError("知乎返回非 JSON：" + raw[:160])
 
 def _oauth_profile(oauth_token):
     """双头鉴权取用户公开信息：Secret 头 + X-OAuth-Token 头"""
@@ -567,12 +571,15 @@ class Handler(BaseHTTPRequestHandler):
             if state and OAUTH_STATE["value"] and state != OAUTH_STATE["value"]:
                 return fail("state 校验失败——请从看山首页重新发起授权。")
             payload = _oauth_exchange(code)
-            token = payload.get("access_token") or (payload.get("data") or {}).get("access_token") if isinstance(payload, dict) else None
+            if not isinstance(payload, dict):
+                raise ValueError("知乎返回非对象：" + str(payload)[:150])
+            data = payload.get("data")
+            token = payload.get("access_token") or (data.get("access_token") if isinstance(data, dict) else None)
             if not token:
-                msg = str(payload)[:160] if not isinstance(payload, dict) else str(payload.get("message") or payload.get("error") or payload)[:160]
-                return fail("未获得 access token：" + msg)
+                msg = data if isinstance(data, str) else (payload.get("message") or payload.get("error") or json.dumps(payload, ensure_ascii=False))
+                raise ValueError("知乎未发 token：" + str(msg)[:180])
+            expires = payload.get("expires_in") or (data.get("expires_in") if isinstance(data, dict) else None)
             import time as _t
-            expires = payload.get("expires_in")
             OAUTH_TOKEN["value"] = token
             OAUTH_TOKEN["expires"] = (int(_t.time()) + int(expires) * 1000) if str(expires).isdigit() else None
             OAUTH_TOKEN["profile"] = _oauth_profile(token)
