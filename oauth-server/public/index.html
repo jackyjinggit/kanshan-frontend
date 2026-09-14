@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>kanshan-oauth-demo · 知乎 OAuth Hello World</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header><span>知乎黑客松</span><b id="runtime">正在检查环境</b></header>
+      <section class="hero">
+        <p class="eyebrow">ZHIHU ACCOUNT / OAUTH</p>
+        <h1>知乎 OAuth<br />Hello World</h1>
+        <p>连接你的知乎账号，然后用登录账号各读取一条创作、关注和收藏数据。</p>
+      </section>
+      <section class="account">
+        <div class="account-title"><span>账号授权状态</span><b id="status">检查中</b></div>
+        <div class="identity"><div id="avatar-placeholder">知</div><img id="avatar" alt="知乎头像" hidden /><div><strong id="name">尚未连接知乎账号</strong><p id="headline">完成授权后显示公开账号信息</p></div></div>
+        <div class="meta"><span>App ID：<b id="app-id">-</b></span><span id="redirect-uri">-</span></div>
+        <p class="message" id="message"></p>
+        <div class="actions"><button id="login">授权知乎账号</button><button class="secondary" id="refresh" hidden>重新请求用户数据</button><button class="secondary danger" id="logout" hidden>退出本次授权</button></div>
+      </section>
+      <aside>此页面是「看山」的知乎授权服务。从看山主页点击登录时本页以弹窗打开——授权成功后本窗口会自动关闭并回到看山，无需任何手动操作。</aside>
+      <p id="back-to-kanshan" hidden style="text-align:center;margin:8px 0;"><a class="button" href="https://jackyjinggit.github.io/kanshan-frontend/">← 返回看山（数据已就绪）</a></p>
+      <section id="results" hidden><div class="results-title"><h2>OAuth 用户接口</h2><span id="summary">等待请求</span></div><div class="grid" id="grid"></div></section>
+    </main>
+    <script>
+      /* 从看山弹窗进入且授权成功：自动关窗回看山（前端正在轮询拉数据）；关窗被浏览器拦截时给兜底按钮 */
+      if (new URLSearchParams(location.search).get("oauth") === "success") {
+        document.addEventListener("DOMContentLoaded", function () {
+          var el = document.getElementById("message");
+          if (el) el.textContent = "授权成功，正在自动返回看山…";
+          setTimeout(function () {
+            try { window.open('', '_self'); window.close(); } catch (e) { }
+            try { window.close(); } catch (e) { }
+          }, 1500);
+          setTimeout(function () {
+            var box = document.getElementById("back-to-kanshan");
+            if (box) box.hidden = false;
+            if (el) el.textContent = "授权成功。若本窗口未自动关闭，点下方按钮返回看山（数据已就绪）。";
+          }, 2500);
+        });
+      }
+    </script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

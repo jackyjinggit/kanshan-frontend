@@ -1,0 +1,5 @@
+.env*
+node_modules/
+lib/credentials.mjs
+credentials.local
+sessions.json

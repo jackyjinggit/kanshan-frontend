@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "projectName": "kanshan-oauth-demo",
+  "projectSlug": "kanshan-oauth-demo",
+  "oauth": {
+    "enabled": true,
+    "appId": "454",
+    "redirectUri": "https://kanshan-oauth.app.workbuddy.host/auth/callback",
+    "credentialService": "zhihu-hackathon:kanshan-oauth-demo:6afb289c2a",
+    "credentialAccount": "oauth-app-key"
+  },
+  "host": "127.0.0.1",
+  "port": 4173
+}
