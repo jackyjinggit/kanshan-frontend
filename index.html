@@ -2268,6 +2268,26 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
     }, 2000);
   }
   window.startOauth = startOauth;
+  /* 载入时静默恢复：OAuth 会话已在（授权过/重新授权过）则直接进分析，免去再点登录 */
+  (function () {
+    try {
+      fetch(SEALOS + "/api/kanshan/contents?limit=50", { credentials: "include" })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.items && j.items.length) {
+            A = buildAnalysis("official", "me", null, j.items, null, []);
+            A.followersKind = "oauth";
+            if (j.profile && j.profile.name && !A.name) A.name = j.profile.name;
+            matchKB();
+            unlocked = 2;
+            goStep(2);
+            renderAll();
+            maybeAutoFans();
+          }
+        })
+        .catch(function () { });
+    } catch (e) { }
+  })();
   /* 粉丝自动补：官方接口不含粉丝字段——用本机存的知乎 ID 走公开主页补（口径「公开数据」） */
   function maybeAutoFans() {
     if (!A || A.followers != null || A.source !== "official") return;
