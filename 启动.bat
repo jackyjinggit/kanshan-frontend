@@ -1,56 +1,75 @@
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
-title 看山本地网关 (kanshan-frontend)  http://localhost:8686
+title Kanshan Demo Launcher - http://localhost:8686
 
-echo ================================================
-echo   看山 · 本地网关   http://localhost:8686/
-echo ================================================
+echo.
+echo  ==================================================
+echo    KANSHAN  Creator Calibration Engine
+echo    One-click demo launcher
+echo  ==================================================
 echo.
 
-REM ---- 按优先级探测可用的 Python，找到第一个就用 ----
+REM ---- 1) already running? just open browser ----
+netstat -ano 2>nul | findstr /C:"127.0.0.1:8686" | findstr /I "LISTENING" >nul 2>&1
+if %errorlevel%==0 (
+  echo  [i] Gateway already running. Opening demo page...
+  echo.
+  start "" "http://localhost:8686/"
+  echo      http://localhost:8686/
+  echo.
+  echo  [Tip] To restart: close the old black window, then run this file again.
+  echo.
+  pause
+  exit /b 0
+)
+
+REM ---- 2) find python ----
 set "PY="
-
-REM 1) Box-Agent 受管运行时（本机最稳）
-if exist "%USERPROFILE%\.box-agent-kanshan\box-agent-runtime\runtime\python\python.exe" (
-  set "PY=%USERPROFILE%\.box-agent-kanshan\box-agent-runtime\runtime\python\python.exe"
-)
-
-REM 2) 旧 WorkBuddy 运行时（兼容历史环境）
-if not defined PY if exist "%USERPROFILE%\.workbuddy\binaries\python\envs\default\python.exe" (
-  set "PY=%USERPROFILE%\.workbuddy\binaries\python\envs\default\python.exe"
-)
-
-REM 3) PATH 里的 py 启动器
-if not defined PY (
-  where py >nul 2>nul && set "PY=py"
-)
-
-REM 4) PATH 里的 python
-if not defined PY (
-  where python >nul 2>nul && set "PY=python"
-)
+if exist "%USERPROFILE%\.box-agent-kanshanox-agent-runtimeuntime\python\python.exe" set "PY=%USERPROFILE%\.box-agent-kanshanox-agent-runtimeuntime\python\python.exe"
+if not defined PY if exist "%USERPROFILE%\.workbuddyinaries\python\envs\default\python.exe" set "PY=%USERPROFILE%\.workbuddyinaries\python\envs\default\python.exe"
+if not defined PY where py >nul 2>nul && set "PY=py"
+if not defined PY where python >nul 2>nul && set "PY=python"
 
 if not defined PY (
-  echo [X] 没有找到可用的 Python。
+  echo  [X] Python not found.
   echo.
-  echo     请到 https://www.python.org/downloads/ 安装 Python，
-  echo     安装时务必勾选 "Add Python to PATH"，装完重开本窗口再双击本文件。
-  echo.
-  echo     server.py 只用 Python 标准库，无需再装任何第三方包。
+  echo      Install from https://www.python.org/downloads/
+  echo      IMPORTANT: check "Add Python to PATH" during setup.
+  echo      Only stdlib is used - no extra packages needed.
   echo.
   pause
   exit /b 1
 )
+echo  [1/3] Python  OK
 
-echo [OK] 使用 Python: %PY%
-echo [OK] 启动后浏览器会自动打开，或手动访问 http://localhost:8686/
-echo [提示] 保持本黑窗口开着 = 网关在运行；关掉窗口 = 网关停止。
+REM ---- 3) secret precheck ----
+set "SECRET_OK="
+if exist "secret.txt" for %%A in ("secret.txt") do if %%~zA GTR 10 set "SECRET_OK=1"
+if not defined SECRET_OK if defined ZHIHU_ACCESS_SECRET set "SECRET_OK=1"
+
+if defined SECRET_OK (
+  echo  [2/3] Access Secret  OK  - real data enabled
+) else (
+  echo  [2/3] Access Secret  MISSING
+  echo        Real data will not load. Demo data still works.
+  echo        To fix: paste your key into secret.txt in this folder.
+)
+
+echo  [3/3] Starting gateway... browser will open automatically.
+echo.
+echo  --------------------------------------------------
+echo    Demo URL :  http://localhost:8686/
+echo    Keep this window OPEN  = service running
+echo    Close this window      = service stopped
+echo  --------------------------------------------------
 echo.
 
+chcp 65001 >nul 2>&1
+set "PYTHONIOENCODING=utf-8"
 "%PY%" server.py
 
 echo.
-echo 网关已停止。若上方有报错，请把红字截图发出来排查。
+echo  Gateway stopped. If errors above, screenshot them for support.
 pause
 endlocal
