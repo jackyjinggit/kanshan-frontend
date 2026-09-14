@@ -2260,6 +2260,13 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
           if (ferrEl) ferrEl.classList.remove("show");
           return;
         }
+        if (j && j.ok) {
+          /* 已授权但该账号暂无公开内容（新号正常）：如实显示，绝不沿用旧账号的渲染 */
+          clearInterval(t);
+          try { if (w) w.close(); } catch (e) { }
+          if (ferrEl) { ferrEl.innerHTML = "已连接知乎账号" + (j.profile && j.profile.name ? "：<b>" + esc(j.profile.name) + "</b>" : "") + "——该账号暂无公开内容（新号属正常）。要看完整数据，请用有内容的账号重新授权。"; ferrEl.classList.add("show"); }
+          return;
+        }
       } catch (e) { /* Sealos 未就绪时静默重试 */ }
       if (tries > 90) {
         clearInterval(t);
@@ -2283,6 +2290,9 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
             goStep(2);
             renderAll();
             maybeAutoFans();
+          } else if (j && j.ok) {
+            var f = document.getElementById("ferr");
+            if (f) { f.innerHTML = "已连接知乎账号——该账号暂无公开内容（新号属正常）。要看完整数据，请用有内容的账号重新授权。"; f.classList.add("show"); }
           }
         })
         .catch(function () { });
