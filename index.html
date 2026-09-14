@@ -667,12 +667,13 @@
     <!-- 复盘闭环（报告第 9 页要求）：选动作 → 记改动与预期 → 到期补数后判继续/停止 -->
     <div class="mlist" style="margin-top:18px;border:1px solid var(--border);border-radius:12px;padding:12px 14px">
       <div class="mk" style="font-size:14px;margin-bottom:8px">复盘闭环 <span class="tg est">本地保存 · 不上传</span></div>
-      <div class="flow-row" style="flex-wrap:wrap;gap:8px">
-        <select class="uinput small" id="rv-action" style="min-width:260px"></select>
-        <input class="uinput small" id="rv-change" placeholder="我改了什么（具体到变量）" style="min-width:220px">
-        <input class="uinput small" id="rv-expect" placeholder="我预期什么（可验证）" style="min-width:220px">
-        <input class="uinput small" id="rv-due" type="date" title="复判日期">
-        <button class="secondarybtn" onclick="addReview()">加入复盘</button>
+      <!-- 复盘闭环行：自适应 flex 换行（勿用 .flow-row——那是 grid 两列 1fr 132px，塞 5 个元素必溢出） -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <select class="uinput small" id="rv-action" style="flex:1 1 240px;min-width:0;width:auto;margin-bottom:0"></select>
+        <input class="uinput small" id="rv-change" placeholder="我改了什么（具体到变量）" style="flex:1 1 200px;min-width:0;width:auto;margin-bottom:0">
+        <input class="uinput small" id="rv-expect" placeholder="我预期什么（可验证）" style="flex:1 1 200px;min-width:0;width:auto;margin-bottom:0">
+        <input class="uinput small" id="rv-due" type="date" title="复判日期" style="flex:0 0 auto;min-width:0;width:auto;margin-bottom:0">
+        <button class="secondarybtn" onclick="addReview()" style="flex:0 0 auto">加入复盘</button>
       </div>
       <div id="rv-list" style="margin-top:10px;font-size:13px"></div>
     </div>
