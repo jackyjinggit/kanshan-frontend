@@ -2261,9 +2261,12 @@ document.querySelectorAll("#dpan button").forEach(function (b) {
           return;
         }
         if (j && j.ok) {
-          /* 已授权但该账号暂无公开内容（新号正常）：如实显示，绝不沿用旧账号的渲染 */
+          /* 已授权但该账号暂无公开内容（新号正常）：清掉旧账号渲染退回首屏，绝不残留 */
           clearInterval(t);
           try { if (w) w.close(); } catch (e) { }
+          A = null;
+          unlocked = 1;
+          goStep(1);
           if (ferrEl) { ferrEl.innerHTML = "已连接知乎账号" + (j.profile && j.profile.name ? "：<b>" + esc(j.profile.name) + "</b>" : "") + "——该账号暂无公开内容（新号属正常）。要看完整数据，请用有内容的账号重新授权。"; ferrEl.classList.add("show"); }
           return;
         }
